@@ -59,7 +59,7 @@ proc initModules(bot: VkBot) {.async.} =
         raise fut.error
       except:
         let msg = fut.error.getStackTrace() & "\n" & getCurrentExceptionMsg()
-        log(lvlError, fmt"При запуске модуля {name} произошла ошибка:\n{msg}"
+        log(lvlError, fmt"При запуске модуля {name} произошла ошибка:\n{msg}")
         modules.del(name)
     elif fut.read == false:
       # Если модуль не захотел включаться - тоже удаляем его
