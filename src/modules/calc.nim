@@ -18,4 +18,4 @@ module "&#128202;", "Калькулятор":
       answer FailMsg
     else:
       # Отправляем результат выражения
-      answer text & " = " & calculated
+      answer fmt"{text} = {calculated}"

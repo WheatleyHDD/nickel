@@ -1,11 +1,11 @@
 version       = "1.0.0"
 author        = "Daniil Yarancev"
-description   = "VKBot - command bot for largest CIS social network - VKontakte"
+description   = "Nickel - command bot for largest CIS social network - VKontakte"
 license       = "MIT"
 srcDir = "src"
-bin = @["vkbot"]
+bin = @["nickel"]
 
-requires "nim >= 0.17.1"
+requires "nim >= 0.17.3"
 
 when defined(nimdistros):
   import distros

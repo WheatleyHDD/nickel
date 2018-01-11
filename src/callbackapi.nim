@@ -17,24 +17,24 @@ proc processCallbackData(data: JsonNode) {.async.} =
   # Получаем объект данного события
   let obj = data["object"]
   # Проверяем тип события
-  case data["type"].str
+  case data["type"].getStr()
   # Новое сообщение
   of "message_new":
     # Тело сообщения
-    let msgBody = obj["body"].str
+    let msgBody = obj["body"].getStr()
     # Собираем user_id пересланных сообщений (если они есть)
     var fwdMessages = newSeq[ForwardedMessage]()
     let rawFwd = obj.getOrDefault("fwd_messages")
     if rawFwd != nil:
       for msg in rawFwd.getElems():
-        fwdMessages.add ForwardedMessage(userId: int msg["user_id"].num)
+        fwdMessages.add ForwardedMessage(userId: msg["user_id"].getInt())
     
     # Создаём объект сообщения
     let message = Message(
         kind: msgPriv,  # Callback API - только приватные сообщения
-        id: int obj["id"].num,  # ID сообщения
-        pid: int obj["user_id"].num,  # ID отправителя
-        timestamp: obj["date"].num,  # Когда было отправлено сообщение
+        id: obj["id"].getInt(),  # ID сообщения
+        pid: obj["user_id"].getInt(),  # ID отправителя
+        timestamp: obj["date"].getBiggestInt(),  # Когда было отправлено сообщение
         subject: "",  # Тема сообщения (её нет в Callback API)
         cmd: bot.processCommand(msgBody),  # Объект команды 
         body: msgBody,  # Тело сообщения
@@ -52,13 +52,13 @@ proc processRequest(req: Request) {.async, gcsafe.} =
   except:
     # Не получилось - игнорируем
     return
-  if data["type"].str == "confirmation":
+  if data["type"].getStr() == "confirmation":
     # Отвечаем кодом для активации
     await req.respond(Http200, bot.config.confirmationCode)
   else:
     # Обрабатываем сообщение дальше
     asyncCheck processCallbackData(data)
-  # Отвечаем ВК, что всё ОК
+  # Отвечаем "ok" (обязательное условие Callback API)
   await req.respond(Http200, "ok")
 
 proc initCallbackApi*(self: VkBot) {.async.} = 

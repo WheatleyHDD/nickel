@@ -11,4 +11,4 @@ const
 module "&#128222;", "Приветствие":
   command "привет", "ку", "прив", "хей", "хэй", "qq", "халло", "хелло", "hi":
     usage = "привет - поприветствовать пользователя"
-    answer random(Greetings)
+    answer rand(Greetings)

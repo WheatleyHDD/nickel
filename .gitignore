@@ -1,6 +1,6 @@
 nimcache
-vkbot
-vkbot.exe
+nickel
+nickel.exe
 config/bot.json
 *.dll
 *.exe

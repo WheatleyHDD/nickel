@@ -9,9 +9,10 @@ import ../log  # Логгирование
 from ../message import msgCount, cmdCount
 import json  # Парсинг JSON
 import strutils  # Строковые операции
+import strformat # Строковая интерполяция
 import asyncdispatch  # Асинхронность
-import strtabs  # Работа с StringTable
 import random  # Функции рандома
+import strtabs  # Строковые таблицы
 import tables  # Обработка модулей во время компиляции
 import logging  # Логгирование
 import os # Операции с файлами

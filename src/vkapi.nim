@@ -121,7 +121,7 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     let error = jsonData.getOrDefault("error")
     # Если есть какая-то ошибка
     if error != nil:
-      case error["error_code"].getNum():
+      case error["error_code"].getInt():
       # Слишком много одинаковых сообщений
       of 9:
         # await api.apiLimiter()

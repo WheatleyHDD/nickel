@@ -9,14 +9,15 @@ export logging
 template log*(lvl: logging.Level, data: string): untyped =
   ## Шаблон для логгирования (С выводом файла и строки)
   const 
-    pos = instantiationInfo()
+    info = instantiationInfo()
     # Не пишем номера строк в release билде
-    addition = 
+    prefix = 
       when defined(release):
-        "[$1] " % [pos.filename]
+        "[$1] " % [info.filename]
       else:
-        "[$1:$2] " % [pos.filename, $pos.line]
-  logger.log(lvl, addition & data)
+        "[$1:$2] " % [info.filename, $info.line]
+  
+  logger.log(lvl, prefix & data)
 
 template log*(data: string): untyped = log(lvlInfo, data)
 

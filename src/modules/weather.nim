@@ -40,7 +40,7 @@ module "&#127782;", "Погода":
           data = data.replace(k, "")
           days = v
       # Находим город, который отправил пользователь
-      let possibleCity = data.replace(" в ", "").replace(" в", "").replace("в ", "")
+      let possibleCity = data.multiReplace({" в ": "", " в": "", "в ": ""})
       if possibleCity != "":
         city = unicode.toLower(possibleCity)
     # Формируем URL
@@ -55,19 +55,19 @@ module "&#127782;", "Погода":
       day = parseJson(await resp.body)["list"].getElems[^1]
       # Конвертируем температуру по Фаренгейту в Цельсии, 
       # округляем и переводим в int
-      temp = int round day["temp"]["day"].fnum - 273
+      temp = int round day["temp"]["day"].getFloat() - 273
       # Влажность
-      humidity = int round day["humidity"].fnum
+      humidity = int round day["humidity"].getFloat()
       # Описание погоды с большой буквы в верхнем регистре
       desc = unicode.capitalize day["weather"].getElems()[0]["description"].str
       # Получаем скорость ветра, округляем и переводим в int
-      wind = int round day["speed"].fnum
+      wind = int round day["speed"].getFloat()
       # Получаем облачность, округляем и переводим в int
-      cloud = int round day["clouds"].fnum
+      cloud = int round day["clouds"].getFloat(0)
       # Получаем timestamp
-      date = int64 day["dt"].num
+      date = day["dt"].getBiggestInt()
       # Конвертируем timestamp в наш формат
-      time = fromSeconds(date).getLocalTime().format("d'.'MM'.'yyyy")
+      time = fromUnix(date).local().format("d'.'MM'.'yyyy")
     # Отвечаем
     answer ResultFormat % [time, desc, $temp, $humidity, $cloud, $wind]
 

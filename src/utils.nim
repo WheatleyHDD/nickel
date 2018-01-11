@@ -102,7 +102,7 @@ proc toApi*(keyValuePairs: varargs[tuple[key, val: string]]): StringTableRef
 
 proc getMoscowTime*(): string =
   ## Возвращает время в формате день.месяц.год часы:минуты:секунды по МСК
-  let curTime = getGmTime(getTime()) + initInterval(hours=3)
+  let curTime = now().utc + initInterval(hours=3)
   return format(curTime, "d'.'M'.'yyyy HH':'mm':'ss")
 
 proc antiFlood*(): string =
@@ -110,4 +110,4 @@ proc antiFlood*(): string =
    const Alphabet = "ABCDEFGHIJKLMNOPQRSTUWXYZ"
    result = ""
    for x in 0..4:
-     result.add random(Alphabet)
+     result.add rand(Alphabet)

@@ -39,5 +39,5 @@ module "&#128221;", "Блокнот":
         # Получаем данные для сохранения и сохраняем их
         let info = args[1..^1].join(" ")
         # Добавлям данные
-        add($msg.pid, "\n\n" & utils.getMoscowTime() & " по МСК\n" & info)
+        add($msg.pid, fmt"\n\n{utils.getMoscowTime()} по МСК\n" & info)
         answer "Таааак... Всё, записал!"

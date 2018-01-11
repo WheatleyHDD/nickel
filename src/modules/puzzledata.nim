@@ -22,7 +22,7 @@ module "&#128161;", "Интересные факты":
     
   command "факт", "факты":
     usage = "факт - отправляет интересный факт"
-    answer random(facts)
+    answer rand(facts)
 
 module "Случайные загадки":
   start:
@@ -32,4 +32,4 @@ module "Случайные загадки":
   
   command "загадка", "загадай":
     usage = "загадка - отправляет случайную загадку с ответом"
-    answer random(puzzle)
+    answer rand(puzzle)

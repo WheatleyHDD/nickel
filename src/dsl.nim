@@ -12,13 +12,12 @@ import types
 # Создан для уникальных имён
 var count {.compiletime.} = 1
 
-
 template start*(body: untyped): untyped {.dirty.} = 
   ## Шаблон для секции "start" в модуле, код внутри секции выполняется
   ## после запуска бота
   # Тут так же есть объект JsonNode, так как иначе не получилось бы добавить эту
   # процедуру к остальным хендлерам
-  proc onStart(bot: VkBot, hidedRawCfg: JsonNode): Future[bool] {.async.} = 
+  proc onStart(bot: VkBot, hiddenRawCfg: JsonNode): Future[bool] {.async.} = 
     result = true
     body
   addStartHandler(name, onStart, false)

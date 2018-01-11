@@ -6,15 +6,18 @@ import message  # Обработка сообщения
 import vkapi  # VK API
 import utils  # Утилиты
 
+using
+  bot: VkBot
+  api: VkApi
 
-proc getLongPollUrl(bot: VkBot) =
+proc getLongPollUrl(bot) =
   ## Получает URL для Long Polling на основе данных bot.lpData
   const 
     UrlFormat = "https://$1?act=a_check&key=$2&ts=$3&wait=25&mode=2&version=1"
   let data = bot.lpData
   bot.lpUrl = UrlFormat % [data.server, data.key, $data.ts]
 
-proc getLongPollApi(api: VkApi): Future[JsonNode] {.async.} = 
+proc getLongPollApi(api): Future[JsonNode] {.async.} = 
   ## Возвращает значения Long Polling от VK API
   const MaxRetries = 5  # Максимальнок кол-во попыток для запроса лонг пуллинга
   let params = {"use_ssl":"1", "lp_version": "2"}.toApi
@@ -26,10 +29,10 @@ proc getLongPollApi(api: VkApi): Future[JsonNode] {.async.} =
     if result.len > 0:
       break
 
-proc initLongPolling*(bot: VkBot, failNum = 0) {.async.} =
+proc initLongPolling*(bot; failNum = 0) {.async.} =
   ## Инициализирует данные или обрабатывает ошибку Long Polling сервера
   let data = await bot.api.getLongPollApi()
-  case int(failNum)
+  case failNum
     # Первый запуск бота
     of 0:
       # Создаём новый объект Long Polling'а
@@ -50,7 +53,7 @@ proc initLongPolling*(bot: VkBot, failNum = 0) {.async.} =
   # Обновляем URL Long Polling'а
   bot.getLongPollUrl()
 
-proc processLpMessage(bot: VkBot, event: seq[JsonNode]) {.async.} =
+proc processLpMessage(bot; event: seq[JsonNode]) {.async.} =
   ## Обрабатывает сырое событие нового сообщения
   # Распаковываем значения из события
   event.unpack(msgId, flags, peerId, ts, subject, text, attaches)
@@ -70,12 +73,12 @@ proc processLpMessage(bot: VkBot, event: seq[JsonNode]) {.async.} =
   # Создаём объект Message
   let message = Message(
       # Тип сообщения - если есть поле "from" - беседа, иначе - ЛС
-      kind: if attaches.contains("from"): msgConf else: msgPriv,
-      id: int msgId.num,  # ID сообщения
-      pid: int peerId.num,  # ID отправителя
-      timestamp: ts.num,  # Когда было отправлено сообщение
+      kind: if "from" in attaches: msgConf else: msgPriv,
+      id: msgId.getInt(),  # ID сообщения
+      pid: peerId.getInt(),  # ID отправителя
+      timestamp: ts.getBiggestInt(),  # Когда было отправлено сообщение
       # Тема сообщения
-      subject: if attaches.contains("subject"): subject.str else: "",
+      subject: if "subject" in attaches: subject.str else: "",
       cmd: cmd,  # Объект команды 
       body: text.str,  # Тело сообщения
       fwdMessages: fwdMessages  # Пересланные сообщения
@@ -83,42 +86,29 @@ proc processLpMessage(bot: VkBot, event: seq[JsonNode]) {.async.} =
   # Если это конференция, то добавляем ID пользователя, который
   # отправил это сообщение
   if message.kind == msgConf:
-    message.cid = attaches["from"].str.parseInt()
+    message.cid = attaches["from"].getStr().parseInt()
 
   asyncCheck bot.checkMessage(message)
   
-proc mainLoop*(bot: VkBot) {.async.} = 
+proc mainLoop*(bot) {.async.} = 
   ## Главный цикл Long Polling (тут происходит получение новых событий)
   var http = newAsyncHttpClient()
   while true:
-    # Получаем новый URL для лонг пуллинга
     bot.getLongPollUrl()
-    # Создаём запрос
-    let req = http.getContent(bot.lpUrl)
-    # Отправляем его
-    yield req
-    # Если произошла ошибка
-    if req.failed:
-      debug("Запрос к LP не удался, создаю новый объект HTTP клиента...")
-      http = newAsyncHttpClient()
-      continue
+    let resp = await http.getContent(bot.lpUrl)
     let
-      # Парсим ответ сервера в JSON
-      jsonData = parseJson(req.read)
-      # Получаем поле failed (если его нет, получаем nil)
+      jsonData = parseJson(resp)
       failed = jsonData.getOrDefault("failed")
-    # Если у нас есть поле failed - значит произошла какая-то ошибка
     if failed != nil:
-      let failNum = int failed.num
+      let failNum = failed.getInt()
       if failNum == 1:
-        bot.lpData.ts = jsonData["ts"].num
+        bot.lpData.ts = jsonData["ts"].getBiggestInt()
       else:
         await bot.initLongPolling(failNum)
       continue
-    # Такое может случиться (если поля updates нет вообще)
-    if not jsonData.contains("updates"): continue
+    # Проверяем, есть ли поле updates, и если нет - отправляем запрос заново
+    if "updates" notin jsonData: continue
     for event in jsonData["updates"]:
-      # Делим каждое событие на его тип и на информацию о нём
       let
         elems = event.elems
         (eventType, eventData) = (elems[0].num, elems[1..^1])

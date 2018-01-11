@@ -25,7 +25,7 @@ proc getJoke(): Future[string] {.async.} =
       continue
     goodElems.add elem
   # Для каждого "ребёнка" случайной цитаты из все
-  for child in random(goodElems).items:
+  for child in rand(goodElems).items:
     case child.kind:
       of XmlNodeKind.xnText:
         result.add(child.innerText)
@@ -41,6 +41,6 @@ module "&#128175;", "Анекдоты":
     let joke = await getJoke()
     # Если удалось получить анекдот
     if joke != "":
-      answer random(Answers) & "\n\n" & joke
+      answer fmt"{rand(Answers)}\n\n{joke}"
     else:
       answer "Извини, но у меня шутилка сломалась :("

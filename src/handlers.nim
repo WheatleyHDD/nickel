@@ -58,7 +58,7 @@ proc processCommand*(bot: VkBot, body: string): Command =
       foundPrefix = prefix
       break
   # Если мы не нашли префикс - выходим
-  if foundPrefix == nil:
+  if foundPrefix.isNil():
     return
   # Получаем команду и аргументы - берём слайс строки body без префикса,
   # используем strip для удаления нежелательных пробелов в начале и конце,

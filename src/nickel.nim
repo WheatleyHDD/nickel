@@ -59,14 +59,15 @@ proc initModules(bot: VkBot) {.async.} =
         raise fut.error
       except:
         let msg = fut.error.getStackTrace() & "\n" & getCurrentExceptionMsg()
-        log(lvlError, "При запуске модуля $1 произошла ошибка:\n$2" % [name, msg])
+        log(lvlError, fmt"При запуске модуля {name} произошла ошибка:\n{msg}"
         modules.del(name)
     elif fut.read == false:
       # Если модуль не захотел включаться - тоже удаляем его
       modules.del(name)
 
 proc startBot(bot: VkBot) {.async.} =
-  ## Инициализирует Long Polling, модули и запускает главный цикл бота
+  ## Инициализирует Long Polling или Callback API, модули 
+  # и запускает приём сообщений
   await bot.initModules()
   if not bot.config.useCallback:
     await bot.initLongPolling()
