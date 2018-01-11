@@ -1,4 +1,4 @@
-Nickel (Никель) [![Build Status](https://travis-ci.org/Yardanico/Nickel.svg?branch=master)](https://travis-ci.org/Yardanico/Nickel)
+Nickel (Никель) [![Build Status](https://semaphoreci.com/api/v1/yardanico/nickel/branches/master/badge.svg)](https://semaphoreci.com/yardanico/nickel)
 ======
 
 Чат-бот для ВКонтакте, написанный на языке Nim.

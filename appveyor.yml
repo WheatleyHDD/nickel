@@ -48,7 +48,7 @@ build_script:
   - bin\nim c koch
   - koch boot -d:release
   - cd C:\projects\nickelvk
-  - nim c -o:vkbot.win64.exe -d:release src\vkbot.nim
+  - nim c -d:release src\nickel.nim
 
 #deploy:
 #  provider: GitHub
