@@ -1,4 +1,4 @@
-include baseimports
+include base_imports
 # Стандартная библиотека
 import sequtils
 # Свои модули
@@ -44,6 +44,10 @@ proc processMessage*(bot: VkBot, msg: Message) {.async.} =
     # Выполняем процедуру модуля асинхронно с хэндлером ошибок
     runCatch(commands[msg.cmd.name].call, bot, msg)
   else:
+    # Запускаем все обработчики, которые работают для любых сообщений.
+    # Для пустых сообщений эти обработчики не запускаются.
+    if cmdText != "": 
+      for fun in anyCommands: runCatch(fun, bot, msg)
     # Если это не команда, и нужно логгировать сообщения
     if bot.config.logMessages:
       msg.log()

@@ -13,7 +13,7 @@ type
   Flags* {.pure.} = enum  ## Флаги события нового сообщения Long Polling
     Unread, Outbox, Replied, 
     Important, Chat, Friends, 
-    Spam, Deleted, Fixed, Media, Hidden
+    Spam, Deleted, Fixed, Media, Hidden, Removed
   
   Command* = object
     name*: string  ## Сама команда
@@ -34,9 +34,8 @@ type
     id*: int  ## ID сообщения
     pid*: int  ## ID отправителя (беседы или пользователя)
     timestamp*: BiggestInt  ## Дата отправки
-    subject*: string  ## Тема 
     cmd*: Command  ## Объект команды для данного сообщения
-    body*: string
+    body*: string  ## Тело сообщения (сам текст)
     fwdMessages*: seq[ForwardedMessage]  ## Пересланные сообщения
     doneAttaches*: seq[Attachment]  ## Приложения к сообщению
   
@@ -80,5 +79,4 @@ type
     filename*: string ## Имя файла с модулем (без расширения .nim)
     needCfg*: bool ## Нужна ли модулю конфигурация
     cmds*: seq[ModuleCommand] ## Секции команд, которые есть в этом модуле
-    anyCommands*: seq[ModuleFunction]  ## Команды, которые реагируют на любой текст
     startProc*: OnStartProcedure  ## Процедура, выполняемая после запуска бота

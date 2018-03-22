@@ -1,4 +1,4 @@
-include baseimports
+include base_imports
 import types
 import utils
 import sequtils
@@ -7,16 +7,68 @@ import macros
 
 type
   # Кортеж для обозначения нашего запроса к API через метод VK API - execute
-  MethodCall = tuple[myFut: Future[JsonNode], 
-                     name: string,
-                     params: StringTableRef]
+  MethodCall = tuple[
+    myFut: Future[JsonNode], 
+    name: string,
+    params: StringTableRef
+  ]
 
 const
-  # Для авторизации от имени пользователя мы используем 
-  # данные официального приложения ВКонтакте под iPhone
+  # Данные официального приложения ВКонтакте на iPhone для авторизации.
   AuthScope = "all"
   ClientId = "3140623"
   ClientSecret = "VeWdmVclDCtn6ihuP1nt"
+
+# Макрос для более удобного вызова VK API. 
+# Взято из https://github.com/vk-brain/nimvkapi
+macro `@`*(api: VkApi, body: untyped): untyped =
+  # Copy input, so we can modify it
+  var input = copyNimTree(body)
+  # Copy API object
+  var api = api
+
+  proc getData(node: NimNode): NimNode =
+    # Table with API parameters
+    var table = newNimNode(nnkTableConstr)
+    let name = node[0].toStrLit
+    let textName = $name
+    for arg in node.children:
+      # If it's a equality expression "abcd=something"
+      if arg.kind == nnkExprEqExpr:
+        # Convert key to string, and call $ for value to convert it to string
+        table.add(newColonExpr(arg[0].toStrLit, newCall("$", arg[1])))
+      # If it's something like "abcd=$somevalue" or "abcd=process(value)"
+      elif arg.kind == nnkInfix and $arg[0].ident == "=$":
+        table.add(newColonExpr(arg[1].toStrLit, newCall("$", arg[2])))
+    result = quote do: 
+      `api`.callMethod(`name`, `table`.toApi)
+  
+  template isNeeded(n: NimNode): bool = 
+    ## Returns true if NimNode is something like 
+    ## "users.get(user_id=1)" or "users.get()" or "execute()"
+    n.kind == nnkCall and (n[0].kind == nnkDotExpr or $n[0] == "execute")
+  
+  proc findNeeded(n: NimNode) =
+    var i = 0
+    # For every children
+    for child in n.children:
+      # If it's the children we're looking for
+      if child.isNeeded():
+        # Modify our children with generated info
+        n[i] = child.getData().copyNimTree()
+      else:
+        # Recursively call findNeeded on child
+        child.findNeeded()
+      inc i  # increment index
+  
+  # If we're looking for that input
+  if input.isNeeded():
+    # Generate needed info
+    return input.getData()
+  else:
+    # Find needed NimNode in input, and replace it here
+    input.findNeeded()
+    return input
 
 proc postData*(client: AsyncHttpClient, url: string, 
                params: StringTableRef): Future[AsyncResponse] {.async.} =
@@ -24,25 +76,26 @@ proc postData*(client: AsyncHttpClient, url: string,
   return await client.post(url, body=encode(params))
 
 proc login*(login, password: string): string = 
-  # Входит в VK через login и password, используя данные Android приложения
-  let authParams = {"client_id": ClientId, 
-                    "client_secret": ClientSecret, 
-                    "grant_type": "password", 
-                    "username": login, 
-                    "password": password, 
-                    "scope": AuthScope, 
-                    "v": "5.60"}.toApi
+  # Входит в VK через login и password, используя данные iPhone приложения
+  let authParams = {
+    "client_id": ClientId, 
+    "client_secret": ClientSecret, 
+    "grant_type": "password", 
+    "username": login, 
+    "password": password, 
+    "scope": AuthScope, 
+    "v": "5.60"
+  }.toApi
   let 
     client = newHttpClient()
-    # Кодируем параметры через url encode
     body = encode(authParams)
   try:
     # Посылаем запрос
-    let data = client.postContent("https://oauth.vk.com/token", body = body)
+    let data = client.postContent("https://oauth.vk.com/token", body)
     # Получаем наш authToken
-    result = data.parseJson()["access_token"].str
+    result = data.parseJson()["access_token"].getStr()
   except OSError:
-    log.error("Не могу авторизоваться, скорее всего нет доступа к интернету!")
+    log.error("Не могу авторизоваться, проверьте подключение к интернету!")
     quit(1)
   log(lvlInfo, "Бот успешно авторизовался!")
 
@@ -78,8 +131,8 @@ var requests = initQueue[MethodCall](32)
 proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
                  auth = true, flood = false, 
                  execute = true): Future[JsonNode] {.async, discardable.} = 
-  ## Отправляет запрос к методу {methodName} с параметрами {params}
-  ## и дополнительным {token} (по умолчанию отправляет его через execute)
+  ## Делает запрос к методу {methodName} с параметрами {params}
+  ## и дополнительным {token} (по умолчанию делает запрос через execute)
   const
     BaseUrl = "https://api.vk.com/method/"
   
@@ -88,14 +141,13 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     # Используем токен только если для этого метода он нужен
     token = if auth: api.token else: ""
     # Создаём URL
-    url = BaseUrl & "$1?access_token=$2&v=5.67&" % [methodName, token]
-  # Переменная, в которую записывается ответ от API в JSON
+    url = fmt"{BaseUrl}{methodName}?access_token={token}&v=5.67&"
   var jsonData: JsonNode
   # Если нужно использовать execute
   if execute:
     # Создаём future для получения информации
     let apiFuture = newFuture[JsonNode]("callMethod")
-    # Добавляем его в очередь запросов
+    # Добавляем наш вызов в очередь запросов
     requests.add((apiFuture, methodName, params))
     # Ожидаем получения результата от execute()
     jsonData = await apiFuture
@@ -112,15 +164,15 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     # Парсим ответ от сервера
     jsonData = parseJson(resp)
   
-  let response = jsonData.getOrDefault("response") 
+  let response = jsonData{"response"} 
   # Если есть секция response - нам нужно вернуть ответ из неё
-  if response != nil:
+  if not response.isNil():
     return response
   # Иначе - проверить на ошибки, и просто вернуть ответ, если всё хорошо
   else:
-    let error = jsonData.getOrDefault("error")
+    let error = jsonData{"error"}
     # Если есть какая-то ошибка
-    if error != nil:
+    if not error.isNil():
       case error["error_code"].getInt():
       # Слишком много одинаковых сообщений
       of 9:
@@ -130,21 +182,21 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
       of 14:
         # TODO: Обработка капчи
         let 
-          sid = error["captcha_sid"].str
-          img = error["captcha_img"].str
+          sid = error["captcha_sid"].getStr()
+          img = error["captcha_img"].getStr()
         log.error("Капча $1 - $2" % [sid, img])
         params["captcha_sid"] = sid
         #params["captcha_key"] = key
         #return await callMethod(api, methodName, params, needAuth)
       else:
         log.error("Ошибка при вызове $1 - $2\n$3" % [methodName, 
-                  error["error_msg"].str, $jsonData])
+                  error["error_msg"].getStr(), $jsonData])
         
     else:
       # Если нет ошибки и поля response, просто возвращаем ответ
       return jsonData
   # Возвращаем пустой JSON объект
-  return  %*{}
+  return %*{}
 
 proc executeCaller*(api: VkApi) {.async.} = 
   ## Бесконечный цикл, проверяет последовательность запросов requests 
@@ -158,9 +210,9 @@ proc executeCaller*(api: VkApi) {.async.} =
     
     var 
       # Последовательность вызовов API в виде VKScript
-      items: seq[string] = @[]
+      items = newSeqOfCap[string](24)
       # Последовательность future
-      futures: seq[Future[JsonNode]] = @[]
+      futures = newSeqOfCap[Future[JsonNode]](24)
       # Максимальное кол-во запросов к API через execute минус 1
       count = 24
     # Пока мы не опустошим нашу очередь или лимит запросов кончится
@@ -168,7 +220,7 @@ proc executeCaller*(api: VkApi) {.async.} =
       # Получаем самый старый элемент
       let (fut, name, params) = requests.pop()
       # Добавляем в items вызов метода в виде строки кода VKScript
-      items.add name.toExecute(params)
+      items.add(toExecute(name, params))
       futures.add(fut)
       # Уменьшаем количество доступных запросов
       dec count
@@ -180,49 +232,39 @@ proc executeCaller*(api: VkApi) {.async.} =
     # Проходимся по результатам и futures
     for data in zip(answer.getElems(), futures):
       let (item, fut) = data
-      # Завершаем future с результатом
+      # Завершаем future с полученным результатом
       fut.complete(item)
 
 
 proc attaches*(msg: Message, vk: VkApi): Future[seq[Attachment]] {.async.} =
   ## Получает аттачи сообщения {msg} используя объект API - {vk}
   result = @[]
-  # Если у сообщения уже есть аттачи
-  if msg.doneAttaches != nil:
-    return msg.doneAttaches
-  let 
-    # Значения для запроса
-    values = {"message_ids": $msg.id, "previev_length": "1"}.toApi
-    msgData = await vk.callMethod("messages.getById", values)
+  # Если у сообщения уже получены аттачи
+  if not msg.doneAttaches.isNil(): return msg.doneAttaches
+  msg.doneAttaches = @[]
+  let msgData = await vk@messages.getById(message_ids=msg.id)
   # Если произошла ошибка при получении данных - ничего не возвращаем
-  if msgData == %*{}:
-    return
-  
+  if msgData == %*{}: return
   let 
     message = msgData["items"][0]
-    attaches = message.getOrDefault("attachments")
+    attaches = message{"attachments"}
   # Если нет ни одного аттача
-  if attaches == nil:
+  if attaches.isNil():
     return
   # Проходимся по всем аттачам
   for rawAttach in attaches.getElems():
-    let
-      # Тип аттача
-      typ = rawAttach["type"].str
-      # Сам аттач
-      attach = rawAttach[typ]
-    var
-      # Ссылка на аттач (на фотографию, документ, или видео)
-      link = ""
+    let typ = rawAttach["type"].getStr() # Тип аттача
+    let attach = rawAttach[typ] # Сам аттач
+    var link = "" # Ссылка на аттач (на фотографию, документ, или видео)
     # Ищем ссылку на аттач
     case typ
     of "doc":
       # Ссылка на документ
-      link = attach["url"].str
+      link = attach["url"].getStr()
     of "video":
       # Ссылка с плеером видео (не работает от имени группы)
       try:
-        link = attach["player"].str
+        link = attach["player"].getStr()
       except KeyError:
         discard
     of "photo":
@@ -233,18 +275,17 @@ proc attaches*(msg: Message, vk: VkApi): Future[seq[Attachment]] {.async.} =
         if "photo_" in k:
           # Парсим разрешение фотографии
           let photoRes = parseInt(k[6..^1])
-          # Если оно выше, чем остальные, берём используем его
+          # Если оно выше, чем остальные, берём его
           if photoRes > biggestRes:
             biggestRes = photoRes
-            link = v.str
+            link = v.getStr()
     let
-      # Если есть access_key - добавляем его, иначе - ничего не добавляем
-      key = if "access_key" in attach: attach["access_key"].str else: ""
-      resAttach = (typ, $attach["owner_id"].num, 
-                  $attach["id"].num, key, link)
-    # Добавляем аттач к результату
-    result.add(resAttach)
-  msg.doneAttaches = result
+      # Если есть access_key - получаем его
+      key = attach{"access_key"}.getStr("")
+      resAttach = (typ, $attach["owner_id"].getInt(), 
+                  $attach["id"].getInt(), key, link)
+    msg.doneAttaches.add(resAttach)
+  return msg.doneAttaches
 
 proc answer*(api: VkApi, msg: Message, body: string, attaches = "") {.async.} =
   ## Упрощённая процедура для ответа на сообщение {msg}
@@ -256,58 +297,12 @@ proc answer*(api: VkApi, msg: Message, body: string, attaches = "") {.async.} =
   discard await api.callMethod("messages.send", data)
 
 template answer*(data: typed, atch = "", wait = false) {.dirty.} = 
-  ## Отправляет сообщение $data пользователю
-  let toSend = when data is string: data else: data.join("\n")
+  ## Отправляет сообщение $data пользователю.
+  ## Создано для использования в модулях, так как там неявно доступны объекты
+  ## текущего сообщения и API
+  template toSend: untyped {.dirty.} = 
+    when data is string: data else: data.join("\n")
   when wait:
     yield api.answer(msg, toSend, attaches=atch)
   else:
     asyncCheck api.answer(msg, toSend, attaches=atch)
-
-# https://github.com/TiberiumN/nimvkapi
-macro `@`*(api: VkApi, body: untyped): untyped =
-  # Copy input, so we can modify it
-  var input = copyNimTree(body)
-  # Copy API object
-  var api = api
-
-  proc getData(node: NimNode): NimNode =
-    # Table with API parameters
-    var table = newNimNode(nnkTableConstr)
-    # Name of method call
-    let name = node[0].toStrLit
-    let textName = $name
-    for arg in node.children:
-      # If it's a equality expression "abcd=something"
-      if arg.kind == nnkExprEqExpr:
-        # Convert key to string, and call $ for value to convert it to string
-        table.add(newColonExpr(arg[0].toStrLit, newCall("$", arg[1])))
-    # Generate result
-    result = quote do: 
-      `api`.callMethod(`name`, `table`.toApi)
-  
-  template isNeeded(n: NimNode): bool = 
-    ## Returns true if NimNode is something like 
-    ## "users.get(user_id=1)" or "users.get()" or "execute()"
-    n.kind == nnkCall and (n[0].kind == nnkDotExpr or $n[0] == "execute")
-  
-  proc findNeeded(n: NimNode) =
-    var i = 0
-    # For every children
-    for child in n.children:
-      # If it's the children we're looking for
-      if child.isNeeded():
-        # Modify our children with generated info
-        n[i] = child.getData().copyNimTree()
-      else:
-        # Recursively call findNeeded on child
-        child.findNeeded()
-      inc i  # increment index
-  
-  # If we're looking for that input
-  if input.isNeeded():
-    # Generate needed info
-    return input.getData()
-  else:
-    # Find needed NimNode in input, and replace it here
-    input.findNeeded()
-    return input

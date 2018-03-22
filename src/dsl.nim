@@ -77,9 +77,9 @@ macro command*(cmds: varargs[string], body: untyped): untyped =
       # Добавляем "usage" для того, чтобы использовать его внутри процедуры
       const `procUsage` = `usage`
       # Сокращение для "msg.cmd.args"
-      let `args` = `msg`.cmd.args
+      template `args`: untyped = `msg`.cmd.args
       # Сокращение для получения текста (сразу всех аргументов)
-      let `text` = `msg`.cmd.args.join(" ")
+      template `text`: untyped = `msg`.cmd.args.join(" ")
       # Вставляем само тело процедуры
       `procBody`
     # Команды, которые обрабатываются этим обработчиком

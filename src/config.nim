@@ -1,7 +1,7 @@
-include baseimports
+include base_imports
  # Сортирование префиксов
 import algorithm
-import sequtils 
+import sequtils
 
 const
   FileCreatedMessage = """Был создан файл конфигурации settings.json. Пожалуйста, 
@@ -127,4 +127,4 @@ proc log*(c: BotConfig) =
     ("Отправлять ошибки пользователям - " & $c.reportErrors)
     ("Выводить ошибки в консоль - " & $c.logErrors)
     ("Отправлять полный лог ошибки пользователям - " & $c.fullReport)
-    ("Используемые префиксы - " & $c.prefixes)
+    ("Используемые префиксы - " & toStr(c.prefixes))

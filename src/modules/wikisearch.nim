@@ -11,11 +11,9 @@ proc callApi(client: AsyncHttpClient,
 proc find(client: AsyncHttpClient, query: string): Future[string] {.async.} =
   ## Ищёт строку $terms на Wikipedia и возвращает первую из возможных статей
   let
-    # Параметры для вызовы API
     searchParams = {"action": "opensearch", 
                     "search": query, 
                     "format": "json"}.newStringTable()
-    # Отправляем запрос
     data = await client.callApi(searchParams)
   # Возвращаем самый первый результат (более всего вероятен)
   let res = data[3].getElems().mapIt(it.`$`.split("wiki/")[1])[0]
@@ -35,14 +33,13 @@ proc getInfo(client: AsyncHttpClient, name: string): Future[string] {.async.} =
     data = await client.callApi(searchParams)
   # Проходимся по всем возможных результатам (но всё равно берём только первый)
   for key, value in data["query"]["pages"].getFields():
-    # Если есть ключ "extract"
-    if value.contains("extract"):
-      return value["extract"].str.splitLines()[0]
+    if "extract" in value: 
+      return value["extract"].getStr().splitLines()[0]
     else:
       continue
   return ""
 
-module "Википедия":
+module "📖 Википедия":
   command "вики", "википедия", "wiki":
     usage = "вики <текст> - найти краткое описание статьи про <текст>"
     if text == "":

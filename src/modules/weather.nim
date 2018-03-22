@@ -20,7 +20,7 @@ const
               
 var key = ""
 
-module "&#127782;", "Погода":
+module "🌦 Погода":
   startConfig:
     key = config["key"].str
   

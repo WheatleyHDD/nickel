@@ -31,9 +31,9 @@ proc giveMemes(api: VkApi, msg: Message, groupId: string) {.async.} =
     attachment = "photo$1_$2_$3" % [oid, attachId, accessKey]
   answer(rand(Answers), attachment)
 
-module "﷽", "Мемы - случайные мемы":
+module "﷽ Мемы - случайные мемы":
   startConfig:
-    groupId = config["group_id"].str
+    groupId = config["group_id"].getStr()
 
   command "мемы", "мемчики", "мемасы", "мемасики", "мемас":
     usage = "мемы - случайный мем"

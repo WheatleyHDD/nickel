@@ -111,3 +111,17 @@ proc antiFlood*(): string =
    result = ""
    for x in 0..4:
      result.add rand(Alphabet)
+  
+proc toStr*[T](x: openArray[T], separator = ", "): string =
+  ## Выводит массив/последовательность в консоль с сохранением символов Unicode
+  result = "["
+  var firstElement = true
+  for value in items(x):
+    if firstElement:
+      firstElement = false
+    else:
+      result.add(separator)
+    result.add("\"")
+    result.add(value)
+    result.add("\"")
+  result.add("]")

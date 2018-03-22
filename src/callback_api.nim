@@ -1,4 +1,4 @@
-include baseimports
+include base_imports
 # Стандартная библиотека
 import asynchttpserver  # Асинхронный HTTP сервер
 
@@ -35,7 +35,6 @@ proc processCallbackData(data: JsonNode) {.async.} =
         id: obj["id"].getInt(),  # ID сообщения
         pid: obj["user_id"].getInt(),  # ID отправителя
         timestamp: obj["date"].getBiggestInt(),  # Когда было отправлено сообщение
-        subject: "",  # Тема сообщения (её нет в Callback API)
         cmd: bot.processCommand(msgBody),  # Объект команды 
         body: msgBody,  # Тело сообщения
         fwdMessages: fwdMessages  # Пересланные сообщения

@@ -1,4 +1,4 @@
-include baseimports
+include base_imports
 import logging
 import macros
 
@@ -7,7 +7,7 @@ addHandler(logger)
 export logging
 
 template log*(lvl: logging.Level, data: string): untyped =
-  ## Шаблон для логгирования (С выводом файла и строки)
+  ## Шаблон для логгирования (С выводом места вызова этого шаблона)
   const 
     info = instantiationInfo()
     # Не пишем номера строк в release билде
@@ -16,7 +16,6 @@ template log*(lvl: logging.Level, data: string): untyped =
         "[$1] " % [info.filename]
       else:
         "[$1:$2] " % [info.filename, $info.line]
-  
   logger.log(lvl, prefix & data)
 
 template log*(data: string): untyped = log(lvlInfo, data)
@@ -33,7 +32,7 @@ proc log*(msg: Message, command = false) =
   if command:
     var args = ""
     if len(msg.cmd.args) > 0:
-      args = "с аргументами " & $msg.cmd.args
+      args = "с аргументами " & toStr(msg.cmd.args)
     else:
       args = "без аргументов"
     log(lvlInfo, "$1 > Команда `$2` $3" % [frm, msg.cmd.name, args])

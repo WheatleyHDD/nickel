@@ -1,4 +1,4 @@
-include baseimports
+include base_imports
 import sequtils  # Работа с последовательностями
 # Свои модули
 import utils  # Макрос unpack (взят со stackoverflow)
@@ -8,8 +8,8 @@ import config # Парсинг файла конфигурации
 import errors  # Обработка ошибок
 import handlers  # Таблица {команда: плагин} и макросы
 import log  # Логгирование
-import longpolling  # Работа с Long Polling
-import callbackapi  # Работа с Callback API
+import user_long_poll  # Работа с User Long Polling
+import callback_api  # Работа с Callback API
 importPlugins()  # Импортируем все модули из папки modules
 
 proc newBot(config: BotConfig): VkBot =
@@ -27,24 +27,20 @@ proc parserModuleConfig(cfg: var JsonNode, module: Module) =
   try:
     cfg = loadModuleConfig(module.filename)
   except:
-    log(
-      lvlError,
-      "При чтении конфигурации $1.json произошла ошибка:\n$2" % [
-        module.filename, getCurrentExceptionMsg()
-      ]
-    )
+    log(lvlError, fmt"Произошла ошибка при чтении {module.filename}.json:")
+    log(lvlError, "\n" & getCurrentExceptionMsg())
     
 proc initModules(bot: VkBot) {.async.} = 
   # Проходимся по всем модулям бота
   for name, module in modules:
     # Если у модуля нет процедуры запуска - пропускаем
-    if module.startProc.isNil() or not module.needCfg:
+    if module.startProc.isNil():
       continue
     var cfg: JsonNode
     # Если модулю нужен конфиг
     if module.needCfg:
       parserModuleConfig(cfg, module)
-      # Если не получилось спарсить конфиг - пропускаем этот модуль
+      # Если не получилось спарсить конфиг - "выключаем" модуль
       if cfg.isNil():
         modules.del(name)
         continue
@@ -62,7 +58,7 @@ proc initModules(bot: VkBot) {.async.} =
         log(lvlError, fmt"При запуске модуля {name} произошла ошибка:\n{msg}")
         modules.del(name)
     elif fut.read == false:
-      # Если модуль не захотел включаться - тоже удаляем его
+      # Если модуль не захотел включаться - тоже удаляем его из списка модулей
       modules.del(name)
 
 proc startBot(bot: VkBot) {.async.} =

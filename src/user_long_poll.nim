@@ -1,4 +1,4 @@
-include baseimports
+include base_imports
 
 # Свои модули
 import handlers  # Обработка команд
@@ -13,50 +13,36 @@ using
 proc getLongPollUrl(bot) =
   ## Получает URL для Long Polling на основе данных bot.lpData
   const 
-    UrlFormat = "https://$1?act=a_check&key=$2&ts=$3&wait=25&mode=2&version=1"
+    UrlFormat = "https://$1?act=a_check&key=$2&ts=$3&wait=25&mode=2&version=3"
   let data = bot.lpData
   bot.lpUrl = UrlFormat % [data.server, data.key, $data.ts]
 
-proc getLongPollApi(api): Future[JsonNode] {.async.} = 
+proc getLongPollApi(api): Future[LongPollData] {.async.} = 
   ## Возвращает значения Long Polling от VK API
-  const MaxRetries = 5  # Максимальнок кол-во попыток для запроса лонг пуллинга
-  let params = {"use_ssl":"1", "lp_version": "2"}.toApi
-  # Пытаемся получить значения Long Polling'а (5 попыток)
-  for retry in 0..MaxRetries:
-    result = await api.callMethod("messages.getLongPollServer", 
-                                  params, execute = false)
-    # Если есть какие-то объекты в data, выходим из цикла
-    if result.len > 0:
-      break
+  let params = {"use_ssl":"1", "lp_version": "3"}.toApi
+  result = to(await api.callMethod(
+    "messages.getLongPollServer", params, execute = false), 
+    LongPollData
+  )
 
 proc initLongPolling*(bot; failNum = 0) {.async.} =
   ## Инициализирует данные или обрабатывает ошибку Long Polling сервера
   let data = await bot.api.getLongPollApi()
   case failNum
-    # Первый запуск бота
-    of 0:
-      # Создаём новый объект Long Polling'а
-      bot.lpData = LongPollData()
-      # Нам нужно инициализировать все параметры - первый запуск
-      bot.lpData.server = data["server"].str
-      bot.lpData.key = data["key"].str
-      bot.lpData.ts = data["ts"].num
-    of 2:
-      ## Обновляем ключ
-      bot.lpData.key = data["key"].str
+    of 0: bot.lpData = data
+    of 1: bot.lpData.ts = data.ts
+    of 2: bot.lpData.key = data.key
     of 3:
-      ## Обновляем ключ и метку времени
-      bot.lpData.key = data["key"].str
-      bot.lpData.ts = data["ts"].num
-    else:
-      discard
+      bot.lpData.key = data.key
+      bot.lpData.ts = data.ts
+    else: discard
   # Обновляем URL Long Polling'а
   bot.getLongPollUrl()
 
 proc processLpMessage(bot; event: seq[JsonNode]) {.async.} =
   ## Обрабатывает сырое событие нового сообщения
   # Распаковываем значения из события
-  event.unpack(msgId, flags, peerId, ts, subject, text, attaches)
+  event.unpack(msgId, flags, peerId, ts, text, attaches)
 
   # Конвертируем число в set значений enum'а Flags
   let msgFlags = cast[set[Flags]](flags.num)
@@ -64,7 +50,7 @@ proc processLpMessage(bot; event: seq[JsonNode]) {.async.} =
   if Flags.Outbox in msgFlags: return
   # Заменяем <br> нормальными \n и обрабатываем команду
   let cmd = bot.processCommand(text.str.replace("<br>", "\n").replace("&quot;", ""))
-  var fwdMessages = newSeq[ForwardedMessage]()
+  var fwdMessages = newSeqOfCap[ForwardedMessage](0)
   # Если есть пересланные сообщения
   if "fwd" in attaches:
     for fwdMsg in attaches["fwd"].str.split(","):
@@ -78,7 +64,6 @@ proc processLpMessage(bot; event: seq[JsonNode]) {.async.} =
       pid: peerId.getInt(),  # ID отправителя
       timestamp: ts.getBiggestInt(),  # Когда было отправлено сообщение
       # Тема сообщения
-      subject: if "subject" in attaches: subject.str else: "",
       cmd: cmd,  # Объект команды 
       body: text.str,  # Тело сообщения
       fwdMessages: fwdMessages  # Пересланные сообщения
@@ -95,16 +80,10 @@ proc mainLoop*(bot) {.async.} =
   var http = newAsyncHttpClient()
   while true:
     bot.getLongPollUrl()
-    let resp = await http.getContent(bot.lpUrl)
-    let
-      jsonData = parseJson(resp)
-      failed = jsonData.getOrDefault("failed")
-    if failed != nil:
-      let failNum = failed.getInt()
-      if failNum == 1:
-        bot.lpData.ts = jsonData["ts"].getBiggestInt()
-      else:
-        await bot.initLongPolling(failNum)
+    let jsonData = parseJson(await http.getContent(bot.lpUrl))
+    let failed = jsonData{"failed"}.getInt(-1)
+    if failed != -1:
+      await bot.initLongPolling(failed)
       continue
     # Проверяем, есть ли поле updates, и если нет - отправляем запрос заново
     if "updates" notin jsonData: continue
@@ -114,10 +93,8 @@ proc mainLoop*(bot) {.async.} =
         (eventType, eventData) = (elems[0].num, elems[1..^1])
       case eventType:
         # Код события 4 - у нас новое сообщение
-        of 4:
-          asyncCheck bot.processLpMessage(eventData)
+        of 4: asyncCheck bot.processLpMessage(eventData)
         # Другие события нам пока что не нужны :)
-        else:
-          discard
+        else: discard
     # Обновляем метку времени
-    bot.lpData.ts = jsonData["ts"].num
+    bot.lpData.ts = jsonData["ts"].getInt()

@@ -32,7 +32,7 @@ proc translate(text, to: string): Future[string] {.async.} =
   let params = {"key": apiKey, "text": text, "lang": to}.newStringTable()
   result = (await TranslateUrl.callApi(params))["text"][0].str
 
-module "&#128292;", "Переводчик":
+module "🔤 Переводчик":
   startConfig Api:
     if config.key == "":
       log("Вы не указали ключ API переводчика, модуль выключается.")

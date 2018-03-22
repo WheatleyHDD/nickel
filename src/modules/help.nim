@@ -1,7 +1,7 @@
 include base
 import sequtils
 
-module "&#127384;", "Помощь":
+module "🆘 Помощь":
   command "команды", "помощь", "хелп", "хэлп":
     usage = "команды - вывести список всех команд"
     var usages = newSeq[string]()
@@ -9,8 +9,9 @@ module "&#127384;", "Помощь":
     for module in modules.values:
       # Проходимся по всем секциям команд в модуле
       for cmd in module.cmds:
-        # Добавляем usages секции к нашим usages
-        usages.add cmd.usages
+        if "" notin cmd.cmds:
+          # Добавляем usages секции к нашим usages
+          usages.add cmd.usages
     answer "Доступные команды:\n\n✅" & usages.join("\n✅")
   
   command "модули", "плагины":
