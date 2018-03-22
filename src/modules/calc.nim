@@ -1,7 +1,7 @@
 # Использует C библиотеку tinyexpr для обработки 
 # мат. выражений - https://github.com/codeplea/tinyexpr/
 include base
-import tinyexpr/tinyexpr
+import mathexpr
 
 const 
   FailMsg = "Я не смог это сосчитать :("
@@ -12,10 +12,12 @@ module "📊 Калькулятор":
     if text == "":
       answer usage
       return
-    let calculated = teAnswer(text) 
-    # Если произошла ошибка при вычислении
-    if calculated == "":
+    var data = 0.0
+    try:
+      data = eval(text)
+    except:
       answer FailMsg
-    else:
-      # Отправляем результат выражения
-      answer fmt"{text} = {calculated}"
+      return
+    # Если число целое - округляем
+    let res = if float(int(data)) == data: $int(data) else: $data
+    answer fmt"{text} = {res}"

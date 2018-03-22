@@ -5,8 +5,7 @@ license       = "MIT"
 srcDir = "src"
 bin = @["nickel"]
 
-requires "nim >= 0.17.3"
-
+requires "nim >= 0.18.0", "mathexpr"
 when defined(nimdistros):
   import distros
   if detectOs(Ubuntu):
