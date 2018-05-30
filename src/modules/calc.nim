@@ -12,12 +12,11 @@ module "📊 Калькулятор":
     if text == "":
       answer usage
       return
-    var data = 0.0
-    try:
-      data = eval(text)
+    var data: float
+    try: data = eval(text)
     except:
       answer FailMsg
       return
     # Если число целое - округляем
     let res = if float(int(data)) == data: $int(data) else: $data
-    answer fmt"{text} = {res}"
+    answer &"{text} = {res}"

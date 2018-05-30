@@ -25,7 +25,7 @@ proc processCallbackData(data: JsonNode) {.async.} =
     # Собираем user_id пересланных сообщений (если они есть)
     var fwdMessages = newSeq[ForwardedMessage]()
     let rawFwd = obj.getOrDefault("fwd_messages")
-    if rawFwd != nil:
+    if not rawFwd.isNil():
       for msg in rawFwd.getElems():
         fwdMessages.add ForwardedMessage(userId: msg["user_id"].getInt())
     
@@ -45,12 +45,10 @@ proc processCallbackData(data: JsonNode) {.async.} =
 proc processRequest(req: Request) {.async, gcsafe.} =
   ## Обрабатывает запрос к серверу
   var data: JsonNode
-  try:
-    # Пытаемся спарсить JSON тела запроса
-    data = parseJson(req.body)
-  except:
-    # Не получилось - игнорируем
-    return
+  # Пытаемся спарсить JSON тела запроса
+  try: data = parseJson(req.body)
+  # Не получилось - игнорируем
+  except: return
   if data["type"].getStr() == "confirmation":
     # Отвечаем кодом для активации
     await req.respond(Http200, bot.config.confirmationCode)

@@ -15,31 +15,21 @@ var count {.compiletime.} = 1
 template start*(body: untyped): untyped {.dirty.} = 
   ## Шаблон для секции "start" в модуле, код внутри секции выполняется
   ## после запуска бота
-  # Тут так же есть объект JsonNode, так как иначе не получилось бы добавить эту
-  # процедуру к остальным хендлерам
-  proc onStart(bot: VkBot, hiddenRawCfg: JsonNode): Future[bool] {.async.} = 
+  # Тут так же есть объект TomlTableRef, так как иначе не получилось бы добавить 
+  # эту процедуру к остальным хендлерам
+  proc onStart(bot: VkBot, hiddenRawCfg: TomlTableRef): Future[bool] {.async.} = 
     result = true
     body
-  addStartHandler(name, onStart, false)
+  module.addStartHandler(onStart, false)
 
 template startConfig*(body: untyped): untyped {.dirty.} = 
   ## Шаблон для секции "startConfig" в модуле, код внутри секции выполняется
   ## после запуска бота. Передаёт объект config в модуль
-  proc onStart(bot: VkBot, config: JsonNode): Future[bool] {.async.} = 
+  proc onStart(bot: VkBot, config: TomlTableRef): Future[bool] {.async.} = 
     result = true
     body
-  addStartHandler(name, onStart)
+  module.addStartHandler(onStart)
 
-template startConfig*(typ: untyped, body: untyped): untyped {.dirty.} = 
-  ## Шаблон для секции "startConfig" в модуле, код внутри секции выполняется
-  ## после запуска бота. Отличается от предыдущего тем, что принимает тип,
-  ## в который должна быть превращена конфигурация
-  proc onStart(bot: VkBot, rawCfg: JsonNode): Future[bool] {.async.} = 
-    let config = json.to(rawCfg, typ)
-    result = true
-    body
-  addStartHandler(name, onStart)
-  
 macro command*(cmds: varargs[string], body: untyped): untyped =
   let uniqName = newIdentNode("handler" & $count)
   var 
@@ -65,12 +55,13 @@ macro command*(cmds: varargs[string], body: untyped): untyped =
   
   let
     # Создаём идентификационные ноды, чтобы Nim не изменял имя переменных
-    api = newIdentNode("api")
-    msg = newIdentNode("msg")
-    procUsage = newIdentNode("usage")
-    args = newIdentNode("args")
-    text = newIdentNode("text")
-    name = newIdentNode("name")
+    api = ident("api")
+    msg = ident("msg")
+    procUsage = ident("usage")
+    args = ident("args")
+    text = ident("text")
+    name = ident("name")
+    module = ident("module")
   # Добавляем код к результату
   result = quote do:
     proc `uniqName`(`api`: VkApi, `msg`: Message) {.async.} = 
@@ -84,20 +75,20 @@ macro command*(cmds: varargs[string], body: untyped): untyped =
       `procBody`
     # Команды, которые обрабатываются этим обработчиком
     const cmds = `cmds`
-    addCmdHandler(`uniqName`, `name`, @cmds, @(`usage`))
+    `module`.addCmdHandler(`uniqName`, @cmds, @(`usage`))
 
 macro module*(names: varargs[string], body: untyped): untyped = 
-  # Добавляем в модули имя нашего модуля (все строки объединённые с пробелом)
+  # Имя модуля (все строки, объединённые пробелом)
   let moduleName = names.mapIt(it.strVal).join(" ")
   template data(moduleName, body: untyped) {.dirty.} = 
     # Отделяем модуль блоком для того, чтобы у разных
-    # модулей были разные области видимости
+    # модулей в одном файле были разные области видимости
     block:
       # Получаем имя файла с текущим модулем
       const fname = instantiationInfo().filename.splitFile().name
+      let module = newModule(moduleName, fname)
       # Добавляем наш модуль в таблицу всех модулей
-      modules[moduleName] = newModule(moduleName, fname)
-      let name = moduleName
+      modules[moduleName] = module
       body
   result = getAst(data(moduleName, body))
   

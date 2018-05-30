@@ -1,4 +1,4 @@
-import json, httpclient, queues, asyncdispatch, tables
+import httpclient, queues, asyncdispatch, tables, parsetoml
 
 # Все эти типы и поля доступны в других модулях.
 
@@ -67,7 +67,7 @@ type
     
   ModuleFunction* = proc(api: VkApi, msg: Message): Future[void]
 
-  OnStartProcedure* = proc(bot: VkBot, config: JsonNode): Future[bool]
+  OnStartProcedure* = proc(bot: VkBot, config: TomlTableRef): Future[bool]
   
   ModuleCommand* = ref object
     cmds*: seq[string]

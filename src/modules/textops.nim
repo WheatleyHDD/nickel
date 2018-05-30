@@ -1,5 +1,5 @@
 include base
-import unicode, sequtils, future
+import unicode, sequtils, sugar
 
 const
   # Таблица для переворачивания символов
@@ -60,7 +60,6 @@ module "🖊 Операции с текстом":
   command "лол":
     usage = "лол <кол-во> - генерирует смех определённой длины из символов АЗХ"
     const LolWord = "АЗХ"
-    try:
-      answer LolWord.repeat(args[0].parseInt.clamp(5, 90))
-    except:
-      answer usage
+    
+    try: answer LolWord.repeat(args[0].parseInt().clamp(5, 90))
+    except: answer usage

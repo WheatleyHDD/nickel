@@ -45,15 +45,17 @@ proc processLpMessage(bot; event: seq[JsonNode]) {.async.} =
   event.unpack(msgId, flags, peerId, ts, text, attaches)
 
   # Конвертируем число в set значений enum'а Flags
-  let msgFlags = cast[set[Flags]](flags.num)
+  let msgFlags = cast[set[Flags]](flags.getInt())
   # Если мы же и отправили это сообщение - его обрабатывать не нужно
   if Flags.Outbox in msgFlags: return
-  # Заменяем <br> нормальными \n и обрабатываем команду
-  let cmd = bot.processCommand(text.str.replace("<br>", "\n").replace("&quot;", ""))
-  var fwdMessages = newSeqOfCap[ForwardedMessage](0)
+  # Заменяем некоторые символы и обрабатываем команду
+  let cmd = bot.processCommand(text.getStr().multiReplace(
+    {"<br>": "\n", "&quot;": ""}
+  ))
+  var fwdMessages = newSeq[ForwardedMessage]()
   # Если есть пересланные сообщения
   if "fwd" in attaches:
-    for fwdMsg in attaches["fwd"].str.split(","):
+    for fwdMsg in attaches["fwd"].getStr().split(","):
       let data = fwdMsg.split("_")
       fwdMessages.add ForwardedMessage(msgId: data[1])
   # Создаём объект Message
@@ -65,14 +67,13 @@ proc processLpMessage(bot; event: seq[JsonNode]) {.async.} =
       timestamp: ts.getBiggestInt(),  # Когда было отправлено сообщение
       # Тема сообщения
       cmd: cmd,  # Объект команды 
-      body: text.str,  # Тело сообщения
+      body: text.getStr(),  # Тело сообщения
       fwdMessages: fwdMessages  # Пересланные сообщения
     )
   # Если это конференция, то добавляем ID пользователя, который
   # отправил это сообщение
   if message.kind == msgConf:
     message.cid = attaches["from"].getStr().parseInt()
-
   asyncCheck bot.checkMessage(message)
   
 proc mainLoop*(bot) {.async.} = 
@@ -89,8 +90,8 @@ proc mainLoop*(bot) {.async.} =
     if "updates" notin jsonData: continue
     for event in jsonData["updates"]:
       let
-        elems = event.elems
-        (eventType, eventData) = (elems[0].num, elems[1..^1])
+        elems = event.getElems()
+        (eventType, eventData) = (elems[0].getInt(), elems[1..^1])
       case eventType:
         # Код события 4 - у нас новое сообщение
         of 4: asyncCheck bot.processLpMessage(eventData)

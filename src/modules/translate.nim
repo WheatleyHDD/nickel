@@ -1,10 +1,6 @@
 include base
 import httpclient, unicode
 
-type
-  Api = object
-    key: string
-
 const
   TranslateUrl = "https://translate.yandex.net/api/v1.5/tr.json/translate"
   LanguagesUrl = "https://translate.yandex.net/api/v1.5/tr.json/getLangs"
@@ -26,18 +22,18 @@ proc getLanguages() {.async.} =
   # Проходимся по словарю код_языка: отображаемое_имя
   for ui, display in data["langs"].getFields():
     # langs - таблица отображаемое_имя: код_языка
-    langs[unicode.toLower(display.str)] = ui
+    langs[unicode.toLower(display.getStr())] = ui
 
 proc translate(text, to: string): Future[string] {.async.} = 
   let params = {"key": apiKey, "text": text, "lang": to}.newStringTable()
-  result = (await TranslateUrl.callApi(params))["text"][0].str
+  result = (await TranslateUrl.callApi(params))["text"][0].getStr()
 
 module "🔤 Переводчик":
-  startConfig Api:
-    if config.key == "":
-      log("Вы не указали ключ API переводчика, модуль выключается.")
+  startConfig:
+    apiKey= config.getString("key")
+    if apiKey == "":
+      warn "API key for translation module is not specified"
       return false
-    apiKey = config.key
     # Получаем список языков от Яндекса
     await getLanguages()
   
@@ -65,7 +61,5 @@ module "🔤 Переводчик":
     else:
       lang = "русский"
       data = args.join(" ")
-    try:
-      answer await data.translate(langs[lang])
-    except:
-      answer "Перевести данный текст не удалось!"
+    try: answer await data.translate(langs[lang])
+    except: answer "Перевести данный текст не удалось!"

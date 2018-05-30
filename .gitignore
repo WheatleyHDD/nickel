@@ -1,7 +1,8 @@
 nimcache
 nickel
 nickel.exe
-config/bot.json
+config/bot.toml
+config/modules.toml
 *.dll
 *.exe
 *.ilk

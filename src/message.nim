@@ -22,8 +22,7 @@ proc processMessage*(bot: VkBot, msg: Message) {.async.} =
   # Увеличиваем счётчик сообщений
   inc msgCount
   # TODO: Уменьшить повторение кода в обработке раскладки
-  if commands.contains(cmdText):
-    command = true
+  if commands.contains(cmdText): command = true
 
   elif commands.contains(rusConverted):
     msg.cmd.name = rusConverted
@@ -34,23 +33,16 @@ proc processMessage*(bot: VkBot, msg: Message) {.async.} =
     msg.cmd.name = engConverted
     msg.cmd.args.applyIt it.toEng()
     command = true
-  # Если это команда
   if command:
-    # Увеличиваем счётчик команд
     inc cmdCount
-    # Если нужно логгировать команды
-    if bot.config.logCommands:
-      msg.log(command = true)
+    if bot.config.logCommands: msg.log(command = true)
     # Выполняем процедуру модуля асинхронно с хэндлером ошибок
     runCatch(commands[msg.cmd.name].call, bot, msg)
   else:
-    # Запускаем все обработчики, которые работают для любых сообщений.
-    # Для пустых сообщений эти обработчики не запускаются.
-    if cmdText != "": 
-      for fun in anyCommands: runCatch(fun, bot, msg)
+    if useAnyCommands: # Если есть хотя бы один обработчик любых сообщений
+      for cmd in anyCommands: runCatch(cmd.call, bot, msg)
     # Если это не команда, и нужно логгировать сообщения
-    if bot.config.logMessages:
-      msg.log()
+    if bot.config.logMessages: msg.log()
 
 proc checkMessage*(bot: VkBot, msg: Message) {.async.} = 
   ## Выполняет обработку сообщения и проверяет ошибки
@@ -66,6 +58,6 @@ proc checkMessage*(bot: VkBot, msg: Message) {.async.} =
       errorMessage &= "\n" & getCurrentExceptionMsg()
     if bot.config.logErrors:
       # Если нужно писать ошибки в консоль
-      error("\n" & getCurrentExceptionMsg())
+      error "Message processing error", error = getCurrentExceptionMsg()
     # Отправляем сообщение об ошибке
     await bot.api.answer(msg, errorMessage)

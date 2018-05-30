@@ -1,11 +1,11 @@
-version       = "1.0.0"
+version       = "1.1.0"
 author        = "Daniil Yarancev"
 description   = "Nickel - command bot for largest CIS social network - VKontakte"
 license       = "MIT"
-srcDir = "src"
-bin = @["nickel"]
+srcDir        = "src"
+bin           = @["nickel"]
 
-requires "nim >= 0.18.0", "mathexpr"
+requires "nim >= 0.18.1", "mathexpr", "chronicles", "parsetoml"
 when defined(nimdistros):
   import distros
   if detectOs(Ubuntu):

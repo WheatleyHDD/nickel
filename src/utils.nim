@@ -1,27 +1,28 @@
 # Файл с различными помощниками
 
 # Стандартная библиотека
-import macros, strtabs, times, strutils, random, os, sequtils, unicode, cgi
+import macros, strtabs, times, strutils, random, os
+import sequtils, unicode, cgi, strformat
 # Свои пакеты
 import types
 
 const
   # Таблица русских и английских символов (для конвертирования раскладки)
   English = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "A", 
-             "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", 
-             "V", "B", "N", "M", "q", "w", "e", "r", "t", "y", "u", 
-             "i", "o", "p", "a", "s", "d", "f", "g", "h", "j", "k", 
-             "l", "z", "x", "c", "v", "b", "n", "m", ":", "^", "~", 
-             "`", "{", "[", "}", "]", "\"", "'", "<", ",", ">", ".", 
-             ";", "?", "/", "&", "@", "#", "$"]
+            "S", "D", "F", "G", "H", "J", "K", "L", "Z", "X", "C", 
+            "V", "B", "N", "M", "q", "w", "e", "r", "t", "y", "u", 
+            "i", "o", "p", "a", "s", "d", "f", "g", "h", "j", "k", 
+            "l", "z", "x", "c", "v", "b", "n", "m", ":", "^", "~", 
+            "`", "{", "[", "}", "]", "\"", "'", "<", ",", ">", ".", 
+            ";", "?", "/", "&", "@", "#", "$"]
     
   Russian = ["Й", "Ц", "У", "К", "Е", "Н", "Г", "Ш", "Щ", "З", "Ф", 
-             "Ы", "В", "А", "П", "Р", "О", "Л", "Д", "Я", "Ч", "С", 
-             "М", "И", "Т", "Ь", "й", "ц", "у", "к", "е", "н", "г", 
-             "ш", "щ", "з", "ф", "ы", "в", "а", "п", "р", "о", "л", 
-             "д", "я", "ч", "с", "м", "и", "т", "ь", "Ж", ":", "Ё", 
-             "ё", "Х", "х", "Ъ", "ъ", "Э", "э", "Б", "б", "Ю", "ю", 
-             "ж", ",", ".", "?", "'", "№", ";"]
+            "Ы", "В", "А", "П", "Р", "О", "Л", "Д", "Я", "Ч", "С", 
+            "М", "И", "Т", "Ь", "й", "ц", "у", "к", "е", "н", "г", 
+            "ш", "щ", "з", "ф", "ы", "в", "а", "п", "р", "о", "л", 
+            "д", "я", "ч", "с", "м", "и", "т", "ь", "Ж", ":", "Ё", 
+            "ё", "Х", "х", "Ъ", "ъ", "Э", "э", "Б", "б", "Ю", "ю", 
+            "ж", ",", ".", "?", "'", "№", ";"]
 
 template convert(data: string, frm, to: openarray[string]): untyped =
   result = ""
@@ -41,7 +42,7 @@ proc encode*(params: StringTableRef, isPost = true): string =
       let 
         enck = cgi.encodeUrl(key)
         encv = cgi.encodeUrl(val)
-      result.add($enck & "=" & $encv & "&")
+      result.add(&"{enck}={encv}&")
 
 proc toRus*(data: string): string = 
   ## Конвертирует строку в английской раскладке в русскую
@@ -53,65 +54,60 @@ proc toEng*(data: string): string =
 
 macro unpack*(args: varargs[untyped]): typed =
   ## Распаковывает последовательность или массив
-  ## Почти тоже самое, что "a, b, c, d = list" в питоне
-  ## Использование:
-  ## let a = @[1, 2, 3, 4, 5]
-  ## a.extract(one, two, three, four, five)
+  ## Почти то же самое, что "a, b, c, d = list" в Python
   result = newStmtList()
   # Первый аргумент - сама последовательность или массив
   let arr = args[0]
-  var i = 0
   # Все остальные аргументы - названия переменных
+  var i = 0
   for arg in args.children:
-    if i > 0: 
-      # Добавляем код к результату
+    if i > 0:
       result.add quote do:
         let `arg` = `arr`[`i` - 1]
     inc i
-  
-# Имена файлов, которые не нужно импортировать
+
+# Имена файлов из папки modules, которые не нужно импортировать автоматически
 const IgnoreFilenames = ["base.nim", "help.nim"]
 
 macro importPlugins*(): untyped =
   result = newStmtList()
-  let folder = "src" / "modules"
-  # Проходимся по папке
-  for kind, path in walkDir(folder):
-    # Если это не файл
+  let folder = "src/modules"
+  for kind, path in walkDir("src" / "modules"):
     if kind != pcFile: continue
-    # Имя файла
     let filename = path.extractFilename()
-    # Если этот файл нужно игнорировать
-    if filename in IgnoreFilenames:
-      continue
+    if filename in IgnoreFilenames: continue
     # Имя модуля для импорта
     let toImport = filename.split(".")
     # Если расширение файла не .nim
     if toImport.len != 2 or toImport[1] != "nim": continue
     # Добавляем импорт этого модуля
-    result.add parseExpr("import " & folder / toImport[0])
+    result.add parseExpr(&"import {folder}/{toImport[0]}")
   # Импортируем help в самом конце, чтобы все остальные модули записали
-  # команды в commands
-  result.add parseExpr("import " & folder & "/" & "help")
+  # свои команды в commands
+  result.add parseExpr(&"import {folder}/help")
 
 proc toApi*(keyValuePairs: varargs[tuple[key, val: string]]): StringTableRef 
             {.inline.} = 
-  ## Возвращает новую строковую таблицу, может использоваться
-  ## вот так: let msg = {"message":"Hello", "peer_id": "123"}.toApi
-  return newStringTable(keyValuePairs, modeCaseInsensitive)
+  ## Возвращает новую строковую таблицу
+  runnableExamples:
+    # Пример использования
+    let msg = {"message":"Hello", "peer_id": "123"}.toApi
+  result = newStringTable(keyValuePairs, modeCaseInsensitive)
 
 proc getMoscowTime*(): string =
   ## Возвращает время в формате день.месяц.год часы:минуты:секунды по МСК
-  let curTime = now().utc + initInterval(hours=3)
-  return format(curTime, "d'.'M'.'yyyy HH':'mm':'ss")
+  let curTime = now().utc + initTimeInterval(hours=3)
+  result = format(curTime, "d'.'M'.'yyyy HH':'mm':'ss")
 
 proc antiFlood*(): string =
-   ## Служит ля обхода анти-флуда ВК (генерирует пять случайных букв)
-   const Alphabet = "ABCDEFGHIJKLMNOPQRSTUWXYZ"
-   result = ""
-   for x in 0..4:
-     result.add rand(Alphabet)
-  
+  ## Служит для обхода антифлуда ВК (генерирует пять случайных букв)
+  const Alphabet = "ABCDEFGHIJKLMNOPQRSTUWXYZ"
+  result = ""
+  for x in 0..4:
+    result.add rand(Alphabet)
+
+template quotes*(data: string): string = "\"" & data & "\""
+
 proc toStr*[T](x: openArray[T], separator = ", "): string =
   ## Выводит массив/последовательность в консоль с сохранением символов Unicode
   result = "["
@@ -121,7 +117,8 @@ proc toStr*[T](x: openArray[T], separator = ", "): string =
       firstElement = false
     else:
       result.add(separator)
-    result.add("\"")
-    result.add(value)
-    result.add("\"")
+    result.add(quotes(value))
   result.add("]")
+
+template fatalException*(data: untyped) {.dirty.} = 
+  fatalError data, error = exc.msg

@@ -1,46 +1,20 @@
 include base_imports
-import logging
+import chronicles
+export chronicles
 import macros
 
-var logger* = newConsoleLogger()
-addHandler(logger)
-export logging
-
-template log*(lvl: logging.Level, data: string): untyped =
-  ## Шаблон для логгирования (С выводом места вызова этого шаблона)
-  const 
-    info = instantiationInfo()
-    # Не пишем номера строк в release билде
-    prefix = 
-      when defined(release):
-        "[$1] " % [info.filename]
-      else:
-        "[$1:$2] " % [info.filename, $info.line]
-  logger.log(lvl, prefix & data)
-
-template log*(data: string): untyped = log(lvlInfo, data)
-
-proc fatalError*(data: string) = 
-  ## Логгирует ошибку data с уровнем lvlFatal, и выключает бота
-  log(lvlFatal, data)
+template fatalError*(name: string, data: varargs[untyped]) = 
+  ## Логгирует ошибку data с уровнем error и выключает бота
+  fatal name, data
   quit()
 
 proc log*(msg: Message, command = false) = 
   ## Логгирует объект сообщения в консоль
-  let frm = "https://vk.com/id" & $msg.pid
+  let frm = $msg.pid
   # Если нужно логгировать команду
   if command:
-    var args = ""
-    if len(msg.cmd.args) > 0:
-      args = "с аргументами " & toStr(msg.cmd.args)
-    else:
-      args = "без аргументов"
-    log(lvlInfo, "$1 > Команда `$2` $3" % [frm, msg.cmd.name, args])
+    info("New command", sender_id = frm, 
+      cmd = quotes(msg.cmd.name), args = toStr(msg.cmd.args)
+    )
   else:
-    log(lvlDebug, "Сообщение `$1` от $2" % [msg.body, frm])
-
-macro logWithLevel*(lvl: Level, body: untyped): untyped = 
-  result = newStmtList()
-  for elem in body:
-    result.add quote do:
-      log(`lvl`, `elem`)
+    debug "New message", sender_id = frm, text = msg.body

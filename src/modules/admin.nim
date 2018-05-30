@@ -1,10 +1,13 @@
 include base
 
-const AdminUid = 170831732
-
+var admins = newSeq[int64]()
 
 module "Команды администратора":
+  startConfig:
+    admins = config.getIntArray("admins")
+  
   command "выключись", "выключение":
-    answer "Выключаюсь..."
-    log(fmt"Выключение по запросу администратора https://vk.com/id{msg.pid}")
-    quit(0)
+    if msg.pid in admins:
+      answer "Выключаюсь..."
+      notice "Shutdown sent by admin", admin_id = msg.pid
+      quit(0)

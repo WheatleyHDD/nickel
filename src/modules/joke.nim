@@ -41,6 +41,6 @@ module "💯 Анекдоты":
     let joke = await getJoke()
     # Если удалось получить анекдот
     if joke != "":
-      answer fmt"{rand(Answers)}\n\n{joke}"
+      answer &"{rand(Answers)}\n\n{joke}"
     else:
       answer "Извини, но у меня шутилка сломалась :("

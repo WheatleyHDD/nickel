@@ -6,10 +6,10 @@ import sequtils
 import types  # Общие типы бота
 
 var
-  # Таблица имя_модуля: модуль
   modules* = initTable[string, Module]()
   commands* = newSeq[ModuleCommand]()
-  anyCommands* = newSeq[ModuleFunction]()
+  anyCommands* = newSeq[ModuleCommand]()
+  useAnyCommands* = false
 
 proc contains*(cmds: seq[ModuleCommand], name: string): bool = 
   ## Проверяет, находится ли команда name в командах модуля
@@ -23,38 +23,29 @@ proc `[]`*(cmds: seq[ModuleCommand], name: string): ModuleCommand =
 
 proc newModule*(name, fname: string): Module = 
   ## Создаёт новый модуль с названием name
-  new(result)
-  result.name = name
-  result.filename = fname
-  result.cmds = @[]
+  Module(name: name, filename: fname, cmds: @[])
 
-proc addCmdHandler*(handler: ModuleFunction, name: string, 
-                    cmds, usages: seq[string]) = 
+proc addCmdHandler*(m: Module, handler: ModuleFunction, 
+                  cmds, usages: seq[string]) = 
   ## Процедура для создания ModuleCommand и его инициализации
-  ## Пример - call.handle("привет", "ку"), где call - это ModuleFunction
-  let module = modules[name]
-  # Если это пустая команда - она реагирует на любые команды
-  if cmds[0] == "": 
-    anyCommands.add(handler)
-  else: 
-    # Создаём объект команды
-    let moduleCmd = ModuleCommand(cmds: cmds, usages: usages, call: handler)
-    module.cmds.add moduleCmd
-    commands.add(module.cmds)
-  
+  ## Пример - call.addCmdHandler("привет", "ку")
+  let moduleCmd = ModuleCommand(cmds: cmds, usages: usages, call: handler)
+  m.cmds.add(moduleCmd)
+  if "" in cmds: 
+    useAnyCommands = true
+    anyCommands.add(m.cmds)
+  else: commands.add(m.cmds)
 
-proc addStartHandler*(name: string, handler: OnStartProcedure, needCfg = true) =
+proc addStartHandler*(m: Module, handler: OnStartProcedure, needCfg = true) =
   ## Добавляет к модулю процедуру, которая выполняется после запуска бота
-  modules[name].startProc = handler
-  modules[name].needCfg = needCfg
+  m.startProc = handler
+  m.needCfg = needCfg
 
 proc processCommand*(bot: VkBot, body: string): Command =
   ## Обрабатывает строку {body} и возвращает тип Command
   # Инициализируем список аргументов (даже если сообщение пустое)
   result = Command(name: "", args: @[])
-  # Если тело сообщения пустое
-  if body.len == 0:
-    return
+  if body == "": return
   # Ищем префикс команды
   var foundPrefix: string
   for prefix in bot.config.prefixes:
@@ -63,8 +54,7 @@ proc processCommand*(bot: VkBot, body: string): Command =
       foundPrefix = prefix
       break
   # Если мы не нашли префикс - выходим
-  if foundPrefix.isNil():
-    return
+  if foundPrefix.isNil(): return
   # Получаем команду и аргументы - берём слайс строки body без префикса,
   # используем strip для удаления нежелательных пробелов в начале и конце,
   # делим строку на имя команды и значения

@@ -14,8 +14,8 @@ module "💡 Интересные факты":
   start:
     try:
       facts = jsonToSeq("data" / "facts.json")
-    except: 
-      log("Файл data/puzzle.json не найден.")
+    except:
+      warn "Puzzle plugin data not found"
       return false
   command "факт", "факты":
     usage = "факт - отправляет интересный факт"
@@ -26,7 +26,7 @@ module "Случайные загадки":
     try:
       puzzle = jsonToSeq("data" / "puzzle.json")
     except: 
-      log("Файл data/puzzle.json не найден.")
+      warn "Puzzle plugin data not found"
       return false
   command "загадка", "загадай":
     usage = "загадка - отправляет случайную загадку с ответом"

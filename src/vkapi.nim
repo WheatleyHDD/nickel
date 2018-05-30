@@ -38,7 +38,7 @@ macro `@`*(api: VkApi, body: untyped): untyped =
         # Convert key to string, and call $ for value to convert it to string
         table.add(newColonExpr(arg[0].toStrLit, newCall("$", arg[1])))
       # If it's something like "abcd=$somevalue" or "abcd=process(value)"
-      elif arg.kind == nnkInfix and $arg[0].ident == "=$":
+      elif arg.kind == nnkInfix and $arg[0] == "=$":
         table.add(newColonExpr(arg[1].toStrLit, newCall("$", arg[2])))
     result = quote do: 
       `api`.callMethod(`name`, `table`.toApi)
@@ -62,18 +62,16 @@ macro `@`*(api: VkApi, body: untyped): untyped =
       inc i  # increment index
   
   # If we're looking for that input
-  if input.isNeeded():
-    # Generate needed info
-    return input.getData()
+  if input.isNeeded(): return input.getData()
   else:
     # Find needed NimNode in input, and replace it here
     input.findNeeded()
     return input
 
 proc postData*(client: AsyncHttpClient, url: string, 
-               params: StringTableRef): Future[AsyncResponse] {.async.} =
+              params: StringTableRef): Future[AsyncResponse] {.async.} =
   ## Делает POST запрос на {url} с параметрами {params}
-  return await client.post(url, body=encode(params))
+  result =await client.post(url, body=encode(params))
 
 proc login*(login, password: string): string = 
   # Входит в VK через login и password, используя данные iPhone приложения
@@ -86,18 +84,18 @@ proc login*(login, password: string): string =
     "scope": AuthScope, 
     "v": "5.60"
   }.toApi
+
   let 
     client = newHttpClient()
     body = encode(authParams)
+
   try:
-    # Посылаем запрос
     let data = client.postContent("https://oauth.vk.com/token", body)
     # Получаем наш authToken
     result = data.parseJson()["access_token"].getStr()
   except OSError:
-    log.error("Не могу авторизоваться, проверьте подключение к интернету!")
-    quit(1)
-  log(lvlInfo, "Бот успешно авторизовался!")
+    fatalError "Can't connect to vk.com: check your internet connection"
+  info "Bot successfully authenticated"
 
 proc newApi*(c: BotConfig): VkApi =
   ## Создаёт новый объект VkAPi и возвращает его
@@ -129,10 +127,12 @@ proc toExecute(methodName: string, params: StringTableRef): string {.inline.} =
 var requests = initQueue[MethodCall](32)
 
 proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
-                 auth = true, flood = false, 
-                 execute = true): Future[JsonNode] {.async, discardable.} = 
+                auth = true, flood = false, 
+                execute = true): Future[JsonNode] {.async, discardable.} = 
   ## Делает запрос к методу {methodName} с параметрами {params}
   ## и дополнительным {token} (по умолчанию делает запрос через execute)
+  result = %*{}
+
   const
     BaseUrl = "https://api.vk.com/method/"
   
@@ -141,7 +141,7 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     # Используем токен только если для этого метода он нужен
     token = if auth: api.token else: ""
     # Создаём URL
-    url = fmt"{BaseUrl}{methodName}?access_token={token}&v=5.67&"
+    url = &"{BaseUrl}{methodName}?access_token={token}&v=5.67&"
   var jsonData: JsonNode
   # Если нужно использовать execute
   if execute:
@@ -184,29 +184,23 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
         let 
           sid = error["captcha_sid"].getStr()
           img = error["captcha_img"].getStr()
-        log.error("Капча $1 - $2" % [sid, img])
+        error "Captcha", sid = sid, image_link = img
         params["captcha_sid"] = sid
         #params["captcha_key"] = key
         #return await callMethod(api, methodName, params, needAuth)
       else:
-        log.error("Ошибка при вызове $1 - $2\n$3" % [methodName, 
-                  error["error_msg"].getStr(), $jsonData])
-        
-    else:
-      # Если нет ошибки и поля response, просто возвращаем ответ
-      return jsonData
-  # Возвращаем пустой JSON объект
-  return %*{}
+        error("VK API call error", apiMethod = methodName, 
+          error = error["error_msg"].getStr(), json = jsonData
+        )
+    # Если нет ошибки и поля response, просто возвращаем ответ    
+    else: return jsonData
 
 proc executeCaller*(api: VkApi) {.async.} = 
   ## Бесконечный цикл, проверяет последовательность запросов requests 
   ## для их выполнения через execute
   while true:
-    # Спим 350 мс
     await sleepAsync(350)
-    # Если в очереди нет элементов
-    if requests.len == 0:
-      continue
+    if requests.len == 0: continue
     
     var 
       # Последовательность вызовов API в виде VKScript
@@ -235,7 +229,6 @@ proc executeCaller*(api: VkApi) {.async.} =
       # Завершаем future с полученным результатом
       fut.complete(item)
 
-
 proc attaches*(msg: Message, vk: VkApi): Future[seq[Attachment]] {.async.} =
   ## Получает аттачи сообщения {msg} используя объект API - {vk}
   result = @[]
@@ -249,29 +242,24 @@ proc attaches*(msg: Message, vk: VkApi): Future[seq[Attachment]] {.async.} =
     message = msgData["items"][0]
     attaches = message{"attachments"}
   # Если нет ни одного аттача
-  if attaches.isNil():
-    return
+  if attaches.isNil(): return
   # Проходимся по всем аттачам
   for rawAttach in attaches.getElems():
     let typ = rawAttach["type"].getStr() # Тип аттача
     let attach = rawAttach[typ] # Сам аттач
     var link = "" # Ссылка на аттач (на фотографию, документ, или видео)
-    # Ищем ссылку на аттач
     case typ
-    of "doc":
-      # Ссылка на документ
-      link = attach["url"].getStr()
+    # Документ
+    of "doc": link = attach["url"].getStr()
     of "video":
       # Ссылка с плеером видео (не работает от имени группы)
-      try:
-        link = attach["player"].getStr()
-      except KeyError:
-        discard
+      try: link = attach["player"].getStr()
+      except KeyError: discard
     of "photo":
       # Максимальное разрешение фотографии, которое мы нашли
       var biggestRes = 0
       # Проходимся по всем полям аттача
-      for k, v in pairs(attach):
+      for k, v in attach:
         if "photo_" in k:
           # Парсим разрешение фотографии
           let photoRes = parseInt(k[6..^1])

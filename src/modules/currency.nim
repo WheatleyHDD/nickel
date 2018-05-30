@@ -17,12 +17,11 @@ proc getData(): Future[string] {.async.} =
   let client = newAsyncHttpClient()
   result = ""
   # Если у нас сохранены данные и прошло меньше 12 часов
-  if data.len > 0 and (epochTime() - lastTime) <= 43200:
-    return data
+  if data.len > 0 and (epochTime() - lastTime) <= 43200: return data
   # Иначе - получаем их
   let rates = parseJson(await client.getContent(Url))["rates"]
   for curr, text in Currencies.pairs:
-    let rubleInfo = rates[curr].fnum
+    let rubleInfo = rates[curr].getFloat()
     # Добавляем название валюты
     result.add(text)
     # И само значение
