@@ -8,7 +8,6 @@ import utils  # Утилиты
 
 using
   bot: VkBot
-  api: VkApi
 
 proc getLongPollUrl(bot) =
   ## Получает URL для Long Polling на основе данных bot.lpData
@@ -17,7 +16,7 @@ proc getLongPollUrl(bot) =
   let data = bot.lpData
   bot.lpUrl = UrlFormat % [data.server, data.key, $data.ts]
 
-proc getLongPollApi(api): Future[LongPollData] {.async.} = 
+proc getLongPollApi(api: VkApi): Future[LongPollData] {.async.} = 
   ## Возвращает значения Long Polling от VK API
   let params = {"use_ssl":"1", "lp_version": "3"}.toApi
   result = to(await api.callMethod(

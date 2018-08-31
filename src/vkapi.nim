@@ -8,7 +8,7 @@ import macros
 type
   # Кортеж для обозначения нашего запроса к API через метод VK API - execute
   MethodCall = tuple[
-    myFut: Future[JsonNode], 
+    myFut: Future[JsonNode],
     name: string,
     params: StringTableRef
   ]
@@ -40,14 +40,14 @@ macro `@`*(api: VkApi, body: untyped): untyped =
       # If it's something like "abcd=$somevalue" or "abcd=process(value)"
       elif arg.kind == nnkInfix and $arg[0] == "=$":
         table.add(newColonExpr(arg[1].toStrLit, newCall("$", arg[2])))
-    result = quote do: 
+    result = quote do:
       `api`.callMethod(`name`, `table`.toApi)
-  
-  template isNeeded(n: NimNode): bool = 
+
+  template isNeeded(n: NimNode): bool =
     ## Returns true if NimNode is something like 
     ## "users.get(user_id=1)" or "users.get()" or "execute()"
     n.kind == nnkCall and (n[0].kind == nnkDotExpr or $n[0] == "execute")
-  
+
   proc findNeeded(n: NimNode) =
     var i = 0
     # For every children
@@ -59,7 +59,7 @@ macro `@`*(api: VkApi, body: untyped): untyped =
       else:
         # Recursively call findNeeded on child
         child.findNeeded()
-      inc i  # increment index
+      inc i # increment index
   
   # If we're looking for that input
   if input.isNeeded(): return input.getData()
@@ -68,24 +68,26 @@ macro `@`*(api: VkApi, body: untyped): untyped =
     input.findNeeded()
     return input
 
-proc postData*(client: AsyncHttpClient, url: string, 
+proc postData*(client: AsyncHttpClient, url: string,
               params: StringTableRef): Future[AsyncResponse] {.async.} =
   ## Делает POST запрос на {url} с параметрами {params}
-  result =await client.post(url, body=encode(params))
+  
+  result = await client.post(url, body = encode(params))
 
-proc login*(login, password: string): string = 
-  # Входит в VK через login и password, используя данные iPhone приложения
+proc login*(login, password: string): string =
+  ## Входит в VK через login и password, используя данные iPhone приложения
+
   let authParams = {
-    "client_id": ClientId, 
-    "client_secret": ClientSecret, 
-    "grant_type": "password", 
-    "username": login, 
-    "password": password, 
-    "scope": AuthScope, 
+    "client_id": ClientId,
+    "client_secret": ClientSecret,
+    "grant_type": "password",
+    "username": login,
+    "password": password,
+    "scope": AuthScope,
     "v": "5.60"
   }.toApi
 
-  let 
+  let
     client = newHttpClient()
     body = encode(authParams)
 
@@ -98,14 +100,17 @@ proc login*(login, password: string): string =
   info "Bot successfully authenticated"
 
 proc newApi*(c: BotConfig): VkApi =
-  ## Создаёт новый объект VkAPi и возвращает его
+  ## Создаёт новый объект VkAPi и возвращает его 
+  
   # Создаём токен (либо авторизуем пользователя, либо берём из конфига)
   let token = if c.login != "": login(c.login, c.password) else: c.token
   # Возвращаем результат
-  result = VkApi(token: token, fwdConf: c.forwardConf, isGroup: c.token.len > 0)
+  result = VkApi(token: token, fwdConf: c.forwardConf,
+      isGroup: c.token.len > 0)
 
-proc toExecute(methodName: string, params: StringTableRef): string {.inline.} = 
-  ## Конвертирует вызов метода с параметрами в формат, необходимый для execute
+proc toExecute(methodName: string, params: StringTableRef): string {.inline.} =
+  ## Конвертирует вызов метода с параметрами в формат, необходимый для execute 
+
   # Если нет параметров, нам не нужно их обрабатывать
   if params.len == 0:
     return "API." & methodName & "()"
@@ -117,8 +122,8 @@ proc toExecute(methodName: string, params: StringTableRef): string {.inline.} =
       "\"$1\":\"$2\"" % [
         it.key,
         # Заменяем \n на <br> и " на \"
-        it.value.multiReplace(("\n", "<br>"), ("\"", "\\\""))
-      ]
+      it.value.multiReplace(("\n", "<br>"), ("\"", "\\\""))
+    ]
     )
   # Возвращаем полный вызов к API с именем метода и параметрами
   result = "API." & methodName & "({" & keyValSeq.join(", ") & "})"
@@ -127,15 +132,15 @@ proc toExecute(methodName: string, params: StringTableRef): string {.inline.} =
 var requests = initQueue[MethodCall](32)
 
 proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
-                auth = true, flood = false, 
-                execute = true): Future[JsonNode] {.async, discardable.} = 
+                auth = true, flood = false,
+                execute = true): Future[JsonNode] {.async, discardable.} =
   ## Делает запрос к методу {methodName} с параметрами {params}
   ## и дополнительным {token} (по умолчанию делает запрос через execute)
   result = %*{}
 
   const
     BaseUrl = "https://api.vk.com/method/"
-  
+
   let
     http = newAsyncHttpClient()
     # Используем токен только если для этого метода он нужен
@@ -153,7 +158,7 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     jsonData = await apiFuture
   # Иначе - обычный вызов API
   else:
-    let 
+    let
       # Отправляем запрос к API
       req = await http.postData(url, params)
       # Получаем ответ
@@ -163,8 +168,8 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
       params["message"] = antiFlood() & "\n" & params["message"]
     # Парсим ответ от сервера
     jsonData = parseJson(resp)
-  
-  let response = jsonData{"response"} 
+
+  let response = jsonData{"response"}
   # Если есть секция response - нам нужно вернуть ответ из неё
   if not response.isNil():
     return response
@@ -181,28 +186,28 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
       # Капча
       of 14:
         # TODO: Обработка капчи
-        let 
+        let
           sid = error["captcha_sid"].getStr()
           img = error["captcha_img"].getStr()
         error "Captcha", sid = sid, image_link = img
         params["captcha_sid"] = sid
-        #params["captcha_key"] = key
+      #params["captcha_key"] = key
         #return await callMethod(api, methodName, params, needAuth)
       else:
-        error("VK API call error", apiMethod = methodName, 
+        error("VK API call error", apiMethod = methodName,
           error = error["error_msg"].getStr(), json = jsonData
         )
-    # Если нет ошибки и поля response, просто возвращаем ответ    
+    # Если нет ошибки и поля response, просто возвращаем ответ
     else: return jsonData
 
-proc executeCaller*(api: VkApi) {.async.} = 
+proc executeCaller*(api: VkApi) {.async.} =
   ## Бесконечный цикл, проверяет последовательность запросов requests 
   ## для их выполнения через execute
   while true:
     await sleepAsync(350)
     if requests.len == 0: continue
-    
-    var 
+
+    var
       # Последовательность вызовов API в виде VKScript
       items = newSeqOfCap[string](24)
       # Последовательность future
@@ -221,7 +226,7 @@ proc executeCaller*(api: VkApi) {.async.} =
     # Составляем общий код VK Script
     let code = "return [" & items.join(", ") & "];"
     # Отправляем запрос (false - не отправлять его самого через execute)
-    let answer = await api.callMethod("execute", {"code": code}.toApi, 
+    let answer = await api.callMethod("execute", {"code": code}.toApi,
                                       execute = false)
     # Проходимся по результатам и futures
     for data in zip(answer.getElems(), futures):
@@ -233,12 +238,12 @@ proc attaches*(msg: Message, vk: VkApi): Future[seq[Attachment]] {.async.} =
   ## Получает аттачи сообщения {msg} используя объект API - {vk}
   result = @[]
   # Если у сообщения уже получены аттачи
-  if not msg.doneAttaches.isNil(): return msg.doneAttaches
+  if len(msg.doneAttaches) > 0: return msg.doneAttaches
   msg.doneAttaches = @[]
-  let msgData = await vk@messages.getById(message_ids=msg.id)
+  let msgData = await vk@messages.getById(message_ids = msg.id)
   # Если произошла ошибка при получении данных - ничего не возвращаем
   if msgData == %*{}: return
-  let 
+  let
     message = msgData["items"][0]
     attaches = message{"attachments"}
   # Если нет ни одного аттача
@@ -270,7 +275,7 @@ proc attaches*(msg: Message, vk: VkApi): Future[seq[Attachment]] {.async.} =
     let
       # Если есть access_key - получаем его
       key = attach{"access_key"}.getStr("")
-      resAttach = (typ, $attach["owner_id"].getInt(), 
+      resAttach = (typ, $attach["owner_id"].getInt(),
                   $attach["id"].getInt(), key, link)
     msg.doneAttaches.add(resAttach)
   return msg.doneAttaches
@@ -284,13 +289,13 @@ proc answer*(api: VkApi, msg: Message, body: string, attaches = "") {.async.} =
   if attaches.len > 0: data["attachment"] = attaches
   discard await api.callMethod("messages.send", data)
 
-template answer*(data: typed, atch = "", wait = false) {.dirty.} = 
+template answer*(data: typed, atch = "", wait = false) {.dirty.} =
   ## Отправляет сообщение $data пользователю.
   ## Создано для использования в модулях, так как там неявно доступны объекты
   ## текущего сообщения и API
-  template toSend: untyped {.dirty.} = 
+  template toSend: untyped {.dirty.} =
     when data is string: data else: data.join("\n")
   when wait:
-    yield api.answer(msg, toSend, attaches=atch)
+    yield api.answer(msg, toSend, attaches = atch)
   else:
-    asyncCheck api.answer(msg, toSend, attaches=atch)
+    asyncCheck api.answer(msg, toSend, attaches = atch)

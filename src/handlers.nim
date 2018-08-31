@@ -47,18 +47,21 @@ proc processCommand*(bot: VkBot, body: string): Command =
   result = Command(name: "", args: @[])
   if body == "": return
   # Ищем префикс команды
-  var foundPrefix: string
+  var 
+    foundPrefix = false
+    cmdPrefix = ""
   for prefix in bot.config.prefixes:
     # Если команда начинается с префикса в нижнем регистре
     if unicode.toLower(body).startsWith(prefix):
-      foundPrefix = prefix
+      foundPrefix = true
+      cmdPrefix = prefix
       break
   # Если мы не нашли префикс - выходим
-  if foundPrefix.isNil(): return
+  if not foundPrefix: return
   # Получаем команду и аргументы - берём слайс строки body без префикса,
   # используем strip для удаления нежелательных пробелов в начале и конце,
   # делим строку на имя команды и значения
-  let values = body[len(foundPrefix)..^1].strip().split()
+  let values = body[len(cmdPrefix)..^1].strip().split()
   # Возвращаем первое слово из строки в нижнем регистре и аргументы
   result.name = values[0]
   result.args = values[1..^1]

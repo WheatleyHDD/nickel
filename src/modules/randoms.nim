@@ -14,7 +14,7 @@ module "⚡ Случайные числа":
     ]
     var 
       intArgs = newSeq[int]()
-      failMsg: string
+      failMsg = ""
       rndNumber = 0
     
     try:
@@ -24,7 +24,7 @@ module "⚡ Случайные числа":
       failMsg = "Один из аргументов - не число (или слишком больше число)"
     
     # Если произошла ошибка
-    if not failMsg.isNil():
+    if failMsg != "":
       answer failMsg
       return
     

@@ -5,7 +5,7 @@ license       = "MIT"
 srcDir        = "src"
 bin           = @["nickel"]
 
-requires "nim >= 0.18.1", "mathexpr", "chronicles", "parsetoml"
+requires "nim >= 0.18.1", "mathexpr", "chronicles", "https://github.com/Yardanico/parsetoml"
 when defined(nimdistros):
   import distros
   if detectOs(Ubuntu):
