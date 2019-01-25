@@ -28,49 +28,57 @@ proc parseBotConfig*(): BotConfig =
     самые длинные префиксы были в начале. Это нужно для того, чтобы при
     наличиии нескольких префиксов разной длины, которые начинаются одинаково,
     выбирался самый подходящий]#
-    let prefixes = data.getStringArray("Bot.prefixes").sortedByIt(it).reversed()
+    
+    var prefixes: seq[string]
+    for elem in data["Bot"]["prefixes"].getElems():
+      prefixes.add(elem.getStr())
+    prefixes = prefixes.sortedByIt(it)
+
+    # Пока что не работает из-за проблемы в компиляторе
+    # let prefixes = data["Bot.prefixes"].getElems().mapIt(it.getStr()).sortedByIt(it).reversed()
     let
-      group = data.getTable("Group")
-      user = data.getTable("User")
-      bot = data.getTable("Bot")
-      callback = data.getTable("CallbackApi")
-      errors = data.getTable("Errors")
-      messages = data.getTable("Messages")
-      log = data.getTable("Logging")
+      group = data["Group"].getTable()
+      user = data["User"].getTable()
+      bot = data["Bot"].getTable()
+      callback = data["CallbackApi"].getTable()
+      errors = data["Errors"].getTable()
+      messages = data["Messages"].getTable()
+      log = data["Logging"].getTable()
     
     result = BotConfig(
-      token: group.getString("token"),
-      login: user.getString("login"),
-      password: user.getString("password"),
-      convertText: bot.getBool("try_convert"),
-      reportErrors: errors.getBool("report"),
-      fullReport: errors.getBool("complete_log"),
-      errorMessage: messages.getString("error"),
-      logMessages: log.getBool("messages"),
-      logCommands: log.getBool("commands"),
-      logErrors: log.getBool("errors"),
+      token: group["token"].getStr(),
+      login: user["login"].getStr(),
+      password: user["password"].getStr(),
+      convertText: bot["try_convert"].getBool(),
+      reportErrors: errors["report"].getBool(),
+      fullReport: errors["complete_log"].getBool(),
+      errorMessage: messages["error"].getStr(),
+      logMessages: log["messages"].getBool(),
+      logCommands: log["commands"].getbool(),
+      logErrors: log["errors"].getBool(),
       prefixes: prefixes,
-      useCallback: callback.getBool("enabled"),
-      confirmationCode: callback.getString("code")
+      useCallback: callback["enabled"].getBool(),
+      confirmationCode: callback["code"].getStr()
     )
     # Если в конфиге нет токена, или логин или пароль пустые
     if result.token == "" and (result.login == "" or result.password == ""):
       fatalError "No authentication data found in configuration"
     warn "Reading bot configuration from config/bot.json..."
-    setLogLevel(parseEnum[LogLevel](log.getString("level")))
+    let lvl = parseEnum[LogLevel](log["level"].getStr())
+    setLogLevel(lvl)
   except Exception as exc:
     fatalException "Can't load bot configuration"
 
-proc parseModulesConfig*: TomlTableRef =
+proc parseModulesConfig*: TomlValueRef =
   ## Пытается спарсить общий файл конфигурации модулей, выходит при ошибке
   try: result = parsetoml.parseFile("config" / "modules.toml")
   except Exception as exc:
     fatalException "Can't read modules config file"
 
-proc getModuleConfig*(global: TomlTableRef, m: Module): TomlTableRef =
+proc getModuleConfig*(global: TomlValueRef, m: Module): TomlTableRef =
   ## Получает секцию модуля из общей конфигурации модулей
   ## Возвращает кортеж (конфиг, ошибка).
-  try: result = global.getTable(m.filename)
+  try: result = global[m.filename].getTable()
   # Записываем ошибку (если она произошла)
   except Exception as exc: 
     fatalException "Can't read modules config file"

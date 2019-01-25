@@ -1,10 +1,11 @@
 include base
+import sequtils
 
-var admins = newSeq[int64]()
+var admins = newSeq[int]()
 
 module "Команды администратора":
   startConfig:
-    admins = config.getIntArray("admins")
+    admins = config["admins"].getElems().mapIt(it.getInt())
   
   command "выключись", "выключение":
     if msg.pid in admins:

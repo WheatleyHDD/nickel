@@ -29,11 +29,11 @@ proc giveMemes(api: VkApi, msg: Message, groupId: string) {.async.} =
     # Access key может понадобиться, если группа закрытая 
     accessKey = pic["access_key"].getStr()
     attachment = "photo$1_$2_$3" % [oid, attachId, accessKey]
-  answer(rand(Answers), attachment)
+  answer(sample(Answers), attachment)
 
 module "﷽ Мемы - случайные мемы":
   startConfig:
-    groupId = config.getString("group_id")
+    groupId = config["group_id"].getStr()
 
   command "мемы", "мемчики", "мемасы", "мемасики", "мемас":
     usage = "мемы - случайный мем"

@@ -30,7 +30,7 @@ proc translate(text, to: string): Future[string] {.async.} =
 
 module "🔤 Переводчик":
   startConfig:
-    apiKey= config.getString("key")
+    apiKey= config["key"].getStr()
     if apiKey == "":
       warn "API key for translation module is not specified"
       return false

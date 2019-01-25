@@ -61,7 +61,7 @@ proc processCommand*(bot: VkBot, body: string): Command =
   # Получаем команду и аргументы - берём слайс строки body без префикса,
   # используем strip для удаления нежелательных пробелов в начале и конце,
   # делим строку на имя команды и значения
-  let values = body[len(cmdPrefix)..^1].strip().split()
+  let values = unicode.split(unicode.strip(body[len(cmdPrefix)..^1]))
   # Возвращаем первое слово из строки в нижнем регистре и аргументы
   result.name = values[0]
   result.args = values[1..^1]

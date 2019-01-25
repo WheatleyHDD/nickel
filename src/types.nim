@@ -1,4 +1,4 @@
-import httpclient, queues, asyncdispatch, tables, parsetoml
+import httpclient, deques, asyncdispatch, tables, parsetoml
 
 # Все эти типы и поля доступны в других модулях.
 

@@ -2,7 +2,7 @@ include base_imports
 import types
 import utils
 import sequtils
-import queues
+import deques
 import macros
 
 type
@@ -129,7 +129,7 @@ proc toExecute(methodName: string, params: StringTableRef): string {.inline.} =
   result = "API." & methodName & "({" & keyValSeq.join(", ") & "})"
 
 # Создаём очередь запросов (по умолчанию делаем её из 32 элементов)
-var requests = initQueue[MethodCall](32)
+var requests = initDeque[MethodCall](32)
 
 proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
                 auth = true, flood = false,
@@ -153,7 +153,7 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     # Создаём future для получения информации
     let apiFuture = newFuture[JsonNode]("callMethod")
     # Добавляем наш вызов в очередь запросов
-    requests.add((apiFuture, methodName, params))
+    requests.addLast((apiFuture, methodName, params))
     # Ожидаем получения результата от execute()
     jsonData = await apiFuture
   # Иначе - обычный вызов API
@@ -217,7 +217,7 @@ proc executeCaller*(api: VkApi) {.async.} =
     # Пока мы не опустошим нашу очередь или лимит запросов кончится
     while requests.len != 0 and count != 0:
       # Получаем самый старый элемент
-      let (fut, name, params) = requests.pop()
+      let (fut, name, params) = requests.popFirst()
       # Добавляем в items вызов метода в виде строки кода VKScript
       items.add(toExecute(name, params))
       futures.add(fut)

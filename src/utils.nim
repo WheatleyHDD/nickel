@@ -78,8 +78,8 @@ macro importPlugins*(): untyped =
     if filename in IgnoreFilenames: continue
     # Имя модуля для импорта
     let toImport = filename.split(".")
-    # Если расширение файла не .nim
-    if toImport.len != 2 or toImport[1] != "nim": continue
+    # Если расширение файла не .nim или в названии есть "skip" - пропускаем
+    if toImport.len != 2 or toImport[1] != "nim" or "skip" in toImport[0]: continue
     # Добавляем импорт этого модуля
     result.add parseExpr(&"import {folder}/{toImport[0]}")
   # Импортируем help в самом конце, чтобы все остальные модули записали
@@ -104,7 +104,7 @@ proc antiFlood*(): string =
   const Alphabet = "ABCDEFGHIJKLMNOPQRSTUWXYZ"
   result = ""
   for x in 0..4:
-    result.add rand(Alphabet)
+    result.add sample(Alphabet)
 
 template quotes*(data: string): string = "\"" & data & "\""
 

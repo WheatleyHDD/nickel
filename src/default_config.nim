@@ -72,4 +72,8 @@ const DefaultModulesConfig* = """[greeting]
 [admin]
   # Список ID администраторов для модуля администрации
   admins = [170831732]
+
+[dialogflow]
+  # Включить ли модуль dialogflow
+  enabled = false
 """
