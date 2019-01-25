@@ -63,5 +63,5 @@ proc processCommand*(bot: VkBot, body: string): Command =
   # делим строку на имя команды и значения
   let values = unicode.split(unicode.strip(body[len(cmdPrefix)..^1]))
   # Возвращаем первое слово из строки в нижнем регистре и аргументы
-  result.name = values[0]
+  result.name = values[0].toLower()
   result.args = values[1..^1]
