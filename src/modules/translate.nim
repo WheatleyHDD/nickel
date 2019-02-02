@@ -32,7 +32,7 @@ module "🔤 Переводчик":
   startConfig:
     apiKey= config["key"].getStr()
     if apiKey == "":
-      warn "API key for translation module is not specified"
+      logWarn "API key for translation module is not specified"
       return false
     # Получаем список языков от Яндекса
     await getLanguages()

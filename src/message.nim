@@ -58,6 +58,6 @@ proc checkMessage*(bot: VkBot, msg: Message) {.async.} =
       errorMessage &= "\n" & getCurrentExceptionMsg()
     if bot.config.logErrors:
       # Если нужно писать ошибки в консоль
-      error "Message processing error", error = getCurrentExceptionMsg()
+      logError "Message processing error", error = getCurrentExceptionMsg()
     # Отправляем сообщение об ошибке
     await bot.api.answer(msg, errorMessage)

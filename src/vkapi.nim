@@ -97,7 +97,7 @@ proc login*(login, password: string): string =
     result = data.parseJson()["access_token"].getStr()
   except OSError:
     fatalError "Can't connect to vk.com: check your internet connection"
-  info "Bot successfully authenticated"
+  logInfo "Bot successfully logged in"
 
 proc newApi*(c: BotConfig): VkApi =
   ## Создаёт новый объект VkAPi и возвращает его 
@@ -189,12 +189,12 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
         let
           sid = error["captcha_sid"].getStr()
           img = error["captcha_img"].getStr()
-        error "Captcha", sid = sid, image_link = img
+        logError "Captcha", sid = sid, image_link = img
         params["captcha_sid"] = sid
       #params["captcha_key"] = key
         #return await callMethod(api, methodName, params, needAuth)
       else:
-        error("VK API call error", apiMethod = methodName,
+        logError("VK API call error", apiMethod = methodName,
           error = error["error_msg"].getStr(), json = jsonData
         )
     # Если нет ошибки и поля response, просто возвращаем ответ

@@ -63,9 +63,8 @@ proc parseBotConfig*(): BotConfig =
     # Если в конфиге нет токена, или логин или пароль пустые
     if result.token == "" and (result.login == "" or result.password == ""):
       fatalError "No authentication data found in configuration"
-    warn "Reading bot configuration from config/bot.json..."
-    let lvl = parseEnum[LogLevel](log["level"].getStr())
-    setLogLevel(lvl)
+    logWarn "Reading bot configuration from config/bot.toml..."
+    logLevel = parseEnum[LogLevel](log["level"].getStr())
   except Exception as exc:
     fatalException "Can't load bot configuration"
 
@@ -85,7 +84,7 @@ proc getModuleConfig*(global: TomlValueRef, m: Module): TomlTableRef =
 
 proc log*(c: BotConfig) =
   ## Логгирует текущие настройки бота
-  notice("Loaded bot configuration", 
+  logNotice("Loaded bot configuration", 
     logMessages = c.logMessages,
     logCommands = c.logCommands,
     errorMsg = quotes(c.errorMessage), # Сообщение в кавычках

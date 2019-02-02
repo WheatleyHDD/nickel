@@ -15,8 +15,7 @@ module "ℹ Пример модуля":
   Код внутри по умолчанию возвращает true, если же вернуть false - 
   данный модуль отключится]#
   start:
-    # Для логгирования используется библиотека "chronicles"
-    info "Initialized example module"
+    logInfo "Initialized example module"
   #[command - объявление команд; при получении этих команд выполнится этот код 
   Внутри command доступны объекты: 
     msg: Message (объект сообщения),

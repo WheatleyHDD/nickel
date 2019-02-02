@@ -16,5 +16,5 @@ proc runCatch*(exec: ModuleFunction, bot: VkBot, msg: Message) =
       # Сообщение, котороые мы пошлём
       var errorMessage = rnd & bot.config.errorMessage & "\n"
       if bot.config.fullReport: errorMessage &= "\n" & errorMsg
-      if bot.config.logErrors: error "Error!", info = errorMsg
+      if bot.config.logErrors: logError "Error!", info = errorMsg
       if bot.config.reportErrors: asyncCheck bot.api.answer(msg, errorMessage)

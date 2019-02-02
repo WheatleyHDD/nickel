@@ -49,7 +49,7 @@ proc initModules(bot: VkBot) {.async.} =
       try: raise fut.error
       except Exception as exc:
         let msg = fut.error.getStackTrace() & "\n" & exc.msg
-        error "Can't initialize module", module = name, error = msg
+        logError "Can't initialize module", module = name, error = msg
         module.stop()
     # Если модуль не захотел включаться - тоже удаляем его из списка модулей
     elif fut.read() == false: module.stop()
@@ -66,7 +66,7 @@ proc startBot(bot: VkBot) {.async.} =
   
 proc gracefulShutdown() {.noconv.} =
   ## Выключает бота с ожиданием 500мс (срабатывает на Ctrl+C)
-  notice "Received shutdown request, stopping the bot..."
+  logNotice "Received shutdown request, stopping the bot..."
   sleep(500)
   quit(0)
 
@@ -80,13 +80,13 @@ when isMainModule:
   let cfg = parseBotConfig()
   # Выводим его значения (кроме логина, пароля и токена)
   cfg.log()
-  info "VK authorization..."
+  logInfo "Trying to log in..."
   # Создаём новый объект бота на основе конфигурации
   let bot = newBot(cfg)
   # Устанавливаем хук на Ctrl+C, пока что бесполезен, но
   # может пригодиться в будущем (закрывать сессии к БД и т.д)
   setControlCHook(gracefulShutdown)
-  info "Bot module statistics", command_count = len(commands)
-  info "Bot successfully initialized"
+  logInfo "Number of all registered commands", command_count = len(commands)
+  logInfo "Bot successfully initialized"
   asyncCheck bot.startBot()
   runForever()

@@ -38,7 +38,7 @@ const DefaultBotConfig* = """[Group]
 
 [Logging]
   # Уровень логгирования, может быть одним из:
-  # "DEBUG", "INFO", "NOTICE", "WARN", "ERROR", "FATAL".
+  # DEBUG, INFO, NOTICE, WARN, ERROR, FATAL
   # При разработке рекомендуется использовать DEBUG, иначе - INFO
   level = "INFO"
   # Логгирование ошибок
