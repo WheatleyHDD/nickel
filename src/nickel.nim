@@ -34,7 +34,8 @@ proc stop(m: Module) =
 proc initModules(bot: VkBot) {.async.} = 
   # Проходимся по всем модулям бота
   let allConfigs = parseModulesConfig()
-  for name, module in modules:
+  let mCopy = modules
+  for module in mCopy.values():
     # Если у модуля нет процедуры запуска - пропускаем
     if module.startProc.isNil():
       continue
@@ -49,7 +50,7 @@ proc initModules(bot: VkBot) {.async.} =
       try: raise fut.error
       except Exception as exc:
         let msg = fut.error.getStackTrace() & "\n" & exc.msg
-        logError "Can't initialize module", module = name, error = msg
+        logError "Can't initialize module", module = module.name, error = msg
         module.stop()
     # Если модуль не захотел включаться - тоже удаляем его из списка модулей
     elif fut.read() == false: module.stop()

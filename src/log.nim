@@ -87,6 +87,9 @@ proc log*(msg: Message, command = false) =
   let frm = $msg.pid
   # Если нужно логгировать команду
   if command:
-    logInfo("New command", sender_id = frm, cmd = quotes(msg.cmd.name), args = toStr(msg.cmd.args))
+    logInfo(
+      "New command", sender_id = frm, 
+      cmd = quotes(msg.cmd.name), args = toStr(msg.cmd.args)
+    )
   else:
-    logDebug(&"New message, sender_id = {frm}, text = {msg.body}")
+    logDebug("New message", sender_id = frm, text = msg.body)

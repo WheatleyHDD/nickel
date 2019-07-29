@@ -52,7 +52,7 @@ proc toEng*(data: string): string =
   ## Конвертирует строку в русской раскладке в английскую
   data.convert(Russian, English)
 
-macro unpack*(args: varargs[untyped]): typed =
+macro unpack*(args: varargs[untyped]) =
   ## Распаковывает последовательность или массив
   ## Почти то же самое, что "a, b, c, d = list" в Python
   result = newStmtList()

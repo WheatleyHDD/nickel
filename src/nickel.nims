@@ -7,15 +7,10 @@ hint("XDeclaredButNotUsed", false)
 hint("Pattern", false)
 warning("ProveField", false)
 warning("ProveInit", false)
-warning("ShadowIdent", false)
 warning("GcUnsafe", false)
 warning("GcUnsafe2", false)
+warning("UnusedImport", false)
 
-# Конфигурация библиотеки Chronicles
-switch("define", "chronicles_sinks:textlines[stdout]")
-switch("define", "chronicles_runtime_filtering:on")
-when defined(windows):
-  switch("define", "chronicles_colors:NativeColors")
 
 # Кросс-компиляция под Windows с помощью mingw
 when defined(crosswin):

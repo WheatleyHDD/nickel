@@ -1,5 +1,5 @@
 include base
-import unicode, sequtils, sugar
+import unicode
 
 const
   # Таблица для переворачивания символов
@@ -23,10 +23,15 @@ const
     "э": "є", "ю": "oı", "я": "ʁ", "1": "Ɩ",
     "2": "ᄅ", "3": "Ɛ", "4": "ㄣ", "5": "ϛ",
     "6": "9", "7": "ㄥ", "8": "8", "9": "6", "0": "0"}.toTable()
-  # Создаём во время компиляции таблицу для переворачивания текста назад
-  InvertedFlipTable = lc[
-    (FlipTable[key], key) | (key <- FlipTable.keys), tuple[a, b: string]
-  ].toTable()
+
+# Создаём во время компиляции таблицу для переворачивания текста назад
+var tempTable {.compiletime.} = initTable[string, string]()
+
+static:
+  for k, v in FlipTable:
+    tempTable[v] = k
+
+const InvertedFlipTable = tempTable
 
 module "🖊 Операции с текстом":
   command "перечеркни", "зачеркни":
