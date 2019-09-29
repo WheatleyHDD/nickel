@@ -76,9 +76,9 @@ genTemplate(logError, lvlError)
 genTemplate(logFatal, lvlFatal)
 
 
-template fatalError*(data: string, args: varargs[untyped]) = 
+template fatalError*(data: varargs[untyped]) = 
   ## Логгирует ошибку data с уровнем error и выключает бота
-  logFatal(data, args)
+  logFatal(data)
   quit()
 
 

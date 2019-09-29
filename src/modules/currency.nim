@@ -1,8 +1,8 @@
 include base
-import httpclient, encodings, math, times
+import httpclient, math, times
 
 const 
-  Url = "http://api.fixer.io/latest?base=RUB"
+  Url = "https://api.exchangeratesapi.io/latest?base=RUB"
   # При желании сюда можно добавить другие валюты, доступные на fixer.io
   Currencies = {
     "USD": "Доллар: ", 

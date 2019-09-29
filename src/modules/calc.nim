@@ -6,6 +6,9 @@ import mathexpr
 const 
   FailMsg = "Я не смог это сосчитать :("
 
+
+let e = newEvaluator()
+
 module "📊 Калькулятор":
   command "калькулятор", "посчитай", "calc", "посчитать":
     usage = "калькулятор <выражение> - посчитать математическое выражение"
@@ -13,7 +16,7 @@ module "📊 Калькулятор":
       answer usage
       return
     var data: float
-    try: data = eval(text)
+    try: data = e.eval(text)
     except:
       answer FailMsg
       return
