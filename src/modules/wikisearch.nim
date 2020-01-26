@@ -35,7 +35,7 @@ proc getInfo(client: AsyncHttpClient, name: string): Future[string] {.async.} =
       return value["extract"].getStr().splitLines()[0]
 
 module "📖 Википедия":
-  command "вики", "википедия", "wiki":
+  command ["вики", "википедия", "wiki"]:
     usage = "вики <текст> - найти краткое описание статьи про <текст>"
     if text == "":
       answer usage

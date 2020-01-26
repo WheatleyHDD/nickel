@@ -35,6 +35,6 @@ module "﷽ Мемы - случайные мемы":
   startConfig:
     groupId = config["group_id"].getStr()
 
-  command "мемы", "мемчики", "мемасы", "мемасики", "мемас":
+  command ["мемы", "мемчики", "мемасы", "мемасики", "мемас"]:
     usage = "мемы - случайный мем"
     await giveMemes(api, msg, groupId)

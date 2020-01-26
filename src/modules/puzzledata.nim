@@ -17,7 +17,7 @@ module "💡 Интересные факты":
     except:
       logWarn "Puzzle plugin data not found"
       return false
-  command "факт", "факты":
+  command ["факт", "факты"]:
     usage = "факт - отправляет интересный факт"
     answer sample(facts)
 
@@ -28,6 +28,6 @@ module "Случайные загадки":
     except: 
       logWarn "Puzzle plugin data not found"
       return false
-  command "загадка", "загадай":
+  command ["загадка", "загадай"]:
     usage = "загадка - отправляет случайную загадку с ответом"
     answer sample(puzzle)

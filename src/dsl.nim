@@ -30,7 +30,7 @@ template startConfig*(body: untyped): untyped {.dirty.} =
     body
   module.addStartHandler(onStart)
 
-macro command*(cmds: varargs[string], body: untyped): untyped =
+macro command*(cmds: openarray[string], body: untyped): untyped =
   let uniqName = newIdentNode("handler" & $count)
   var 
     usage = newSeq[string]()
@@ -47,6 +47,7 @@ macro command*(cmds: varargs[string], body: untyped): untyped =
     # Если это строка, или строка с тройными кавычками
     elif text.kind == nnkStrLit or text.kind == nnkTripleStrLit:
       usage.add text.strVal
+  let usageLit = newLit(usage)
   # Добавляем сам код обработчика
   for i in start..<body.len:
     procBody.add body[i]
@@ -75,7 +76,7 @@ macro command*(cmds: varargs[string], body: untyped): untyped =
       `procBody`
     # Команды, которые обрабатываются этим обработчиком
     const cmds = `cmds`
-    `module`.addCmdHandler(`uniqName`, @cmds, @(`usage`))
+    `module`.addCmdHandler(`uniqName`, @cmds, @(`usageLit`))
 
 macro module*(names: varargs[string], body: untyped): untyped = 
   # Имя модуля (все строки, объединённые пробелом)

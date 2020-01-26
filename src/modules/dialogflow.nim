@@ -34,6 +34,6 @@ module "💬 Диалог":
   # сообщение кроме тех, которые являются командами, которые уже есть в боте
   startConfig:
     return config["enabled"].getBool(false)
-  command "":
+  command [""]:
     usage = ""
     answer await callApi($msg.pid, msg.body)
