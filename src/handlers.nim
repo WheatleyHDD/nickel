@@ -45,7 +45,7 @@ proc processCommand*(bot: VkBot, body: string): Command =
   ## Обрабатывает строку {body} и возвращает тип Command
   # Инициализируем список аргументов (даже если сообщение пустое)
   result = Command(name: "", args: @[])
-  if body == "": return
+  if body.len == 0: return
   # Ищем префикс команды
   var 
     foundPrefix = false
@@ -58,6 +58,8 @@ proc processCommand*(bot: VkBot, body: string): Command =
       break
   # Если мы не нашли префикс - выходим
   if not foundPrefix: return
+  # Если кроме префикса ничего нет
+  if body[len(cmdPrefix)..^1].len == 0: return
   # Получаем команду и аргументы - берём слайс строки body без префикса,
   # используем strip для удаления нежелательных пробелов в начале и конце,
   # делим строку на имя команды и значения
