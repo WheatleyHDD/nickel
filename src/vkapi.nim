@@ -172,7 +172,9 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     return response
   # Иначе - проверить на ошибки, и просто вернуть ответ, если всё хорошо
   else:
-    let error = jsonData{"error"}
+    let error = jsonData{
+      if methodName != "execute": "error" else: "execute_errors"
+    }
     # Если есть какая-то ошибка
     if not error.isNil():
       case error["error_code"].getInt():
