@@ -1,19 +1,19 @@
 include base
 import httpclient, encodings, streams, htmlparser, xmltree, random
 
-const 
+const
   Answers = [
-    "Башорг врать не станет!", 
+    "Башорг врать не станет!",
     "Сейчас будет смешно, зуб даю",
-    "Шуточки заказывали?", 
+    "Шуточки заказывали?",
     "Со мной тоже такое бывало :)"
   ]
   
   JokesUrl = "http://bash.im/random"
 
 proc getJoke(): Future[string] {.async.} =
-  let 
-    client = newAsyncHttpClient() 
+  let
+    client = newAsyncHttpClient()
     jokeRaw = (await client.getContent(JokesUrl)).convert("UTF-8", "CP1251")
     jokeHtml = parseHtml(newStringStream(jokeRaw))
   

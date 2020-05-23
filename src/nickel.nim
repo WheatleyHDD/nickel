@@ -17,12 +17,12 @@ proc newBot(config: BotConfig): VkBot =
   result = VkBot(
     api: newApi(config),
     lpData: LongPollData(),
+    isGroup: config.token.len > 0,
     config: config,
-    isGroup: config.token.len > 0
   )
   asyncCheck result.api.executeCaller()
 
-proc stop(m: Module) = 
+proc stop(m: Module) =
   modules.del(m.name)
   for cmd in m.cmds:
     # Удаляем команды этого модуля
@@ -31,7 +31,7 @@ proc stop(m: Module) =
     let idxAny = anyCommands.find(cmd)
     if idxAny >= 0: anyCommands.del(idxAny)
 
-proc initModules(bot: VkBot) {.async.} = 
+proc initModules(bot: VkBot) {.async.} =
   # Проходимся по всем модулям бота
   let allConfigs = parseModulesConfig()
   let mCopy = modules
@@ -56,7 +56,7 @@ proc initModules(bot: VkBot) {.async.} =
     elif fut.read() == false: module.stop()
 
 proc startBot(bot: VkBot) {.async.} =
-  ## Инициализирует Long Polling или Callback API, модули 
+  ## Инициализирует Long Polling или Callback API, модули
   # и запускает приём сообщений
   await bot.initModules()
   if not bot.config.useCallback:
@@ -64,14 +64,14 @@ proc startBot(bot: VkBot) {.async.} =
     await bot.mainLoop()
   else:
     await bot.initCallbackApi()
-  
+
 proc gracefulShutdown() {.noconv.} =
   ## Выключает бота с ожиданием 500мс (срабатывает на Ctrl+C)
   logNotice "Received shutdown request, stopping the bot..."
   sleep(500)
   quit(0)
 
-when isMainModule:
+proc main =
   when defined(windows):
     # Если мы на Windows - устанавливаем кодировку UTF-8 при запуске бота
     discard execShellCmd("chcp 65001")
@@ -91,3 +91,5 @@ when isMainModule:
   logInfo "Bot successfully initialized"
   asyncCheck bot.startBot()
   runForever()
+
+main()

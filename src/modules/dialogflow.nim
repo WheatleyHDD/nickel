@@ -6,11 +6,11 @@ const
   Url = "https://api.dialogflow.com/v1/query?v=20170712&"
 
 let headers = newHttpHeaders({
-    "Content-Type": "application/json", 
+    "Content-Type": "application/json",
     "Authorization": "Bearer " & Token
 })
 
-proc callApi(id, message: string): Future[string] {.async.} = 
+proc callApi(id, message: string): Future[string] {.async.} =
   let client = newAsyncHttpClient()
   client.headers = headers
 
@@ -21,7 +21,7 @@ proc callApi(id, message: string): Future[string] {.async.} =
     "sessionId": id
   }.newStringTable()
 
-  let req = await client.get(Url & encode(data)) 
+  let req = await client.get(Url & encode(data))
   let resp = parseJson(await req.body)["result"]
   let answer = resp{"fulfillment", "speech"}.getStr("")
   # Если бот уже решил, что ответить - отправляем

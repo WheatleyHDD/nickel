@@ -1,23 +1,24 @@
 include base
-import httpclient, math, times
+import httpclient, times
 
-const 
+const
   Url = "https://api.exchangeratesapi.io/latest?base=RUB"
   # При желании сюда можно добавить другие валюты, доступные на fixer.io
   Currencies = {
-    "USD": "Доллар: ", 
-    "EUR": "Евро: ", 
+    "USD": "Доллар: ",
+    "EUR": "Евро: ",
     "GBP": "Английский фунт: "
   }.toTable
-var 
+
+var
   data = ""
-  lastTime = epochTime()
+  lastTime = getTime()
 
 proc getData(): Future[string] {.async.} =
   let client = newAsyncHttpClient()
   result = ""
   # Если у нас сохранены данные и прошло меньше 12 часов
-  if data.len > 0 and (epochTime() - lastTime) <= 43200: return data
+  if data.len > 0 and (getTime() - lastTime).inHours <= 12: return data
   # Иначе - получаем их
   let rates = parseJson(await client.getContent(Url))["rates"]
   for curr, text in Currencies.pairs:
@@ -28,7 +29,7 @@ proc getData(): Future[string] {.async.} =
     result.add((1 / rubleInfo).formatFloat(precision = 4) & " руб.\n")
   # Сохраняем результат и текущее время (для кеширования)
   data = result
-  lastTime = epochTime()
+  lastTime = getTime()
 
 module "💱 Курсы валют":
   command ["курс", "валюта", "валюты", "доллар", "евро", "фунт"]:

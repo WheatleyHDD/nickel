@@ -24,8 +24,8 @@ module "📚 Хелперы":
     answer &"""Ваша ссылка: https://vk.cc/{data["key"].getStr()}"""
   
   command ["инфо", "стата", "статистика"]:
-    const 
-      gitRev = 
+    const
+      gitRev =
         # Если в данной папке есть репозиторий и есть git клиент
         if dirExists(".git") and gorgeEx("git status")[1] == 0:
           staticExec("git rev-parse HEAD")

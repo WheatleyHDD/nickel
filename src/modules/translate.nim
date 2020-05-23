@@ -11,12 +11,12 @@ let headers = newHttpHeaders(
 )
 let langs = newStringTable()
 
-proc callApi(url: string, params: StringTableRef): Future[JsonNode] {.async.} = 
+proc callApi(url: string, params: StringTableRef): Future[JsonNode] {.async.} =
   let client = newAsyncHttpClient()
   client.headers = headers
   result = parseJson await client.postContent(url, encode(params))
 
-proc getLanguages() {.async.} = 
+proc getLanguages() {.async.} =
   let params = {"key": apiKey, "ui": "ru"}.newStringTable()
   let data = await LanguagesUrl.callApi(params)
   # Проходимся по словарю код_языка: отображаемое_имя
@@ -24,7 +24,7 @@ proc getLanguages() {.async.} =
     # langs - таблица отображаемое_имя: код_языка
     langs[unicode.toLower(display.getStr())] = ui
 
-proc translate(text, to: string): Future[string] {.async.} = 
+proc translate(text, to: string): Future[string] {.async.} =
   let params = {"key": apiKey, "text": text, "lang": to}.newStringTable()
   result = (await TranslateUrl.callApi(params))["text"][0].getStr()
 
@@ -39,7 +39,7 @@ module "🔤 Переводчик":
   
   command ["переведи"]:
     usage = [
-      "переведи на $язык $текст - перевести $текст на $язык", 
+      "переведи на $язык $текст - перевести $текст на $язык",
       "переведи $текст - перевести $текст на русский"
     ]
     if text.len > 600:

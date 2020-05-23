@@ -1,11 +1,5 @@
-# Использует C библиотеку tinyexpr для обработки 
-# мат. выражений - https://github.com/codeplea/tinyexpr/
 include base
 import mathexpr
-
-const 
-  FailMsg = "Я не смог это сосчитать :("
-
 
 let e = newEvaluator()
 
@@ -15,10 +9,10 @@ module "📊 Калькулятор":
     if text == "":
       answer usage
       return
-    var data: float
-    try: data = e.eval(text)
+    let data = try:
+      e.eval(text)
     except:
-      answer FailMsg
+      answer "Я не смог это сосчитать :("
       return
     # Если число целое - округляем
     let res = if float(int(data)) == data: $int(data) else: $data

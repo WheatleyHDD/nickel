@@ -11,27 +11,27 @@ var
   anyCommands* = newSeq[ModuleCommand]()
   useAnyCommands* = false
 
-proc contains*(cmds: seq[ModuleCommand], name: string): bool = 
+proc contains*(cmds: seq[ModuleCommand], name: string): bool =
   ## Проверяет, находится ли команда name в командах модуля
   cmds.anyIt(name in it.cmds)
 
-proc `[]`*(cmds: seq[ModuleCommand], name: string): ModuleCommand = 
+proc `[]`*(cmds: seq[ModuleCommand], name: string): ModuleCommand =
   ## Возвращает объект ModuleCommand по имени команды
   for cmd in cmds:
     if name in cmd.cmds:
       return cmd
 
-proc newModule*(name, fname: string): Module = 
+proc newModule*(name, fname: string): Module =
   ## Создаёт новый модуль с названием name
   Module(name: name, filename: fname, cmds: @[])
 
-proc addCmdHandler*(m: Module, handler: ModuleFunction, 
-                  cmds, usages: seq[string]) = 
+proc addCmdHandler*(m: Module, handler: ModuleFunction,
+                  cmds, usages: seq[string]) =
   ## Процедура для создания ModuleCommand и его инициализации
   ## Пример - call.addCmdHandler("привет", "ку")
   let moduleCmd = ModuleCommand(cmds: cmds, usages: usages, call: handler)
   m.cmds.add(moduleCmd)
-  if "" in cmds: 
+  if "" in moduleCmd.cmds: 
     useAnyCommands = true
     anyCommands.add(m.cmds)
   else: commands.add(m.cmds)
@@ -47,7 +47,7 @@ proc processCommand*(bot: VkBot, body: string): Command =
   result = Command(name: "", args: @[])
   if body.len == 0: return
   # Ищем префикс команды
-  var 
+  var
     foundPrefix = false
     cmdPrefix = ""
   for prefix in bot.config.prefixes:

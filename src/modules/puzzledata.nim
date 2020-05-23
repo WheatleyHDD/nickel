@@ -2,11 +2,11 @@ include base
 import sequtils
 import os
 
-template jsonToSeq(filename: string): seq[string] = 
+template jsonToSeq(filename: string): seq[string] =
   readFile(filename).parseJson.getElems().mapIt(it.getStr())
 
 # Загружаем факты и загадки во время запуска бота
-var 
+var
   facts: seq[string]
   puzzle: seq[string]
 

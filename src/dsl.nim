@@ -12,27 +12,27 @@ import types
 # Создан для уникальных имён
 var count {.compiletime.} = 1
 
-template start*(body: untyped): untyped {.dirty.} = 
+template start*(body: untyped): untyped {.dirty.} =
   ## Шаблон для секции "start" в модуле, код внутри секции выполняется
   ## после запуска бота
-  # Тут так же есть объект TomlTableRef, так как иначе не получилось бы добавить 
+  # Тут так же есть объект TomlTableRef, так как иначе не получилось бы добавить
   # эту процедуру к остальным хендлерам
-  proc onStart(bot: VkBot, hiddenRawCfg: TomlTableRef): Future[bool] {.async.} = 
+  proc onStart(bot: VkBot, hiddenRawCfg: TomlTableRef): Future[bool] {.async.} =
     result = true
     body
   module.addStartHandler(onStart, false)
 
-template startConfig*(body: untyped): untyped {.dirty.} = 
+template startConfig*(body: untyped): untyped {.dirty.} =
   ## Шаблон для секции "startConfig" в модуле, код внутри секции выполняется
   ## после запуска бота. Передаёт объект config в модуль
-  proc onStart(bot: VkBot, config: TomlTableRef): Future[bool] {.async.} = 
+  proc onStart(bot: VkBot, config: TomlTableRef): Future[bool] {.async.} =
     result = true
     body
   module.addStartHandler(onStart)
 
 macro command*(cmds: openarray[string], body: untyped): untyped =
   let uniqName = newIdentNode("handler" & $count)
-  var 
+  var
     usage = newSeq[string]()
     procBody = newStmtList()
     start = 0
@@ -65,7 +65,7 @@ macro command*(cmds: openarray[string], body: untyped): untyped =
     module = ident("module")
   # Добавляем код к результату
   result = quote do:
-    proc `uniqName`(`api`: VkApi, `msg`: Message) {.async.} = 
+    proc `uniqName`(`api`: VkApi, `msg`: Message) {.async.} =
       # Добавляем "usage" для того, чтобы использовать его внутри процедуры
       const `procUsage` = `usage`
       # Сокращение для "msg.cmd.args"
@@ -78,10 +78,10 @@ macro command*(cmds: openarray[string], body: untyped): untyped =
     const cmds = `cmds`
     `module`.addCmdHandler(`uniqName`, @cmds, @(`usageLit`))
 
-macro module*(names: varargs[string], body: untyped): untyped = 
+macro module*(names: varargs[string], body: untyped): untyped =
   # Имя модуля (все строки, объединённые пробелом)
   let moduleName = names.mapIt(it.strVal).join(" ")
-  template data(moduleName, body: untyped) {.dirty.} = 
+  template data(moduleName, body: untyped) {.dirty.} =
     # Отделяем модуль блоком для того, чтобы у разных
     # модулей в одном файле были разные области видимости
     block:
@@ -92,4 +92,3 @@ macro module*(names: varargs[string], body: untyped): untyped =
       modules[moduleName] = module
       body
   result = getAst(data(moduleName, body))
-  

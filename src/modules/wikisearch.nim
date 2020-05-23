@@ -1,9 +1,9 @@
 include base
 import httpclient, cgi, sequtils, os
 
-proc callApi(client: AsyncHttpClient, 
-            params: StringTableRef): Future[JsonNode] {.async.} = 
-  let 
+proc callApi(client: AsyncHttpClient,
+            params: StringTableRef): Future[JsonNode] {.async.} =
+  let
     urlQuery = encode(params, isPost = false)
     url = "https://ru.wikipedia.org/w/api.php" & urlQuery
   result = parseJson(await client.getContent(url))
@@ -11,8 +11,8 @@ proc callApi(client: AsyncHttpClient,
 proc find(client: AsyncHttpClient, query: string): Future[string] {.async.} =
   ## Ищёт строку $terms на Wikipedia и возвращает первую из возможных статей
   let
-    searchParams = {"action": "opensearch", 
-                    "search": query, 
+    searchParams = {"action": "opensearch",
+                    "search": query,
                     "format": "json"}.newStringTable()
     data = await client.callApi(searchParams)
   # Возвращаем самый первый результат (более всего вероятен)
@@ -31,7 +31,7 @@ proc getInfo(client: AsyncHttpClient, name: string): Future[string] {.async.} =
     data = await client.callApi(searchParams)
   # Проходимся по всем возможных результатам (но всё равно берём только первый)
   for key, value in data["query"]["pages"].getFields():
-    if "extract" in value: 
+    if "extract" in value:
       return value["extract"].getStr().splitLines()[0]
 
 module "📖 Википедия":

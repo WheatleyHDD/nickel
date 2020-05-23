@@ -12,7 +12,7 @@ var
   server = newAsyncHttpServer()
   bot: VkBot
 
-proc processCallbackData(data: JsonNode) {.async.} = 
+proc processCallbackData(data: JsonNode) {.async.} =
   ## Обрабатывает событие от Callback API
   # Получаем объект данного события
   let obj = data["object"]
@@ -35,7 +35,7 @@ proc processCallbackData(data: JsonNode) {.async.} =
         id: obj["id"].getInt(),  # ID сообщения
         pid: obj["user_id"].getInt(),  # ID отправителя
         timestamp: obj["date"].getBiggestInt(),  # Когда было отправлено сообщение
-        cmd: bot.processCommand(msgBody),  # Объект команды 
+        cmd: bot.processCommand(msgBody),  # Объект команды
         body: msgBody,  # Тело сообщения
         fwdMessages: fwdMessages  # Пересланные сообщения
       )
@@ -58,7 +58,7 @@ proc processRequest(req: Request) {.async, gcsafe.} =
   # Отвечаем "ok" (обязательное условие Callback API)
   await req.respond(Http200, "ok")
 
-proc initCallbackApi*(self: VkBot) {.async.} = 
+proc initCallbackApi*(self: VkBot) {.async.} =
   # Копируем ссылку на объект бота к себе
   bot = self
   # Запускаем сервер на 5000 порту

@@ -1,7 +1,7 @@
 include base_imports
 import utils, vkapi
 
-proc runCatch*(exec: ModuleFunction, bot: VkBot, msg: Message) = 
+proc runCatch*(exec: ModuleFunction, bot: VkBot, msg: Message) =
   ## Выполняет процедуру обработки команды модулем с проверкой
   ## на ошибки и их выводом
   var future = exec(bot.api, msg)
@@ -10,7 +10,7 @@ proc runCatch*(exec: ModuleFunction, bot: VkBot, msg: Message) =
       # Если future завершилась без ошибок - всё хорошо
       if not future.failed: return
       # Составляем полный лог ошибки
-      let errorMsg = future.error.getStackTrace() & "\n" & future.error.msg 
+      let errorMsg = future.error.getStackTrace() & "\n" & future.error.msg
       # Анти-флуд
       let rnd = antiFlood() & "\n"
       # Сообщение, котороые мы пошлём

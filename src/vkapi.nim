@@ -19,7 +19,7 @@ const
   ClientId = "3140623"
   ClientSecret = "VeWdmVclDCtn6ihuP1nt"
 
-# Макрос для более удобного вызова VK API. 
+# Макрос для более удобного вызова VK API.
 # Взято из https://github.com/vk-brain/nimvkapi
 macro `@`*(api: VkApi, body: untyped): untyped =
   # Copy input, so we can modify it
@@ -44,7 +44,7 @@ macro `@`*(api: VkApi, body: untyped): untyped =
       `api`.callMethod(`name`, `table`.toApi)
 
   template isNeeded(n: NimNode): bool =
-    ## Returns true if NimNode is something like 
+    ## Returns true if NimNode is something like
     ## "users.get(user_id=1)" or "users.get()" or "execute()"
     n.kind == nnkCall and (n[0].kind == nnkDotExpr or $n[0] == "execute")
 
@@ -71,7 +71,6 @@ macro `@`*(api: VkApi, body: untyped): untyped =
 proc postData*(client: AsyncHttpClient, url: string,
               params: StringTableRef): Future[AsyncResponse] {.async.} =
   ## Делает POST запрос на {url} с параметрами {params}
-  
   result = await client.post(url, body = encode(params))
 
 proc login*(login, password: string): string =
@@ -100,17 +99,15 @@ proc login*(login, password: string): string =
   logInfo "Bot successfully logged in"
 
 proc newApi*(c: BotConfig): VkApi =
-  ## Создаёт новый объект VkAPi и возвращает его 
-  
+  ## Создаёт новый объект VkAPi и возвращает его
   # Создаём токен (либо авторизуем пользователя, либо берём из конфига)
   let token = if c.login != "": login(c.login, c.password) else: c.token
   # Возвращаем результат
   result = VkApi(token: token, fwdConf: c.forwardConf,
       isGroup: c.token.len > 0)
 
-proc toExecute(methodName: string, params: StringTableRef): string {.inline.} =
-  ## Конвертирует вызов метода с параметрами в формат, необходимый для execute 
-
+proc toExecute(methodName: string, params: StringTableRef): string =
+  ## Конвертирует вызов метода с параметрами в формат, необходимый для execute
   # Если нет параметров, нам не нужно их обрабатывать
   if params.len == 0:
     return "API." & methodName & "()"
@@ -133,7 +130,7 @@ var requests = initDeque[MethodCall](32)
 
 proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
                 auth = true, flood = false,
-                execute = true): Future[JsonNode] {.async, discardable.} =
+                execute = true): Future[JsonNode] {.async.} =
   ## Делает запрос к методу {methodName} с параметрами {params}
   ## и дополнительным {token} (по умолчанию делает запрос через execute)
   result = %*{}

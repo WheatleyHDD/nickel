@@ -3,7 +3,7 @@ import ../types  # Типы данных
 import ../vkapi  # VK API
 import ../handlers  # Процедура handle
 import ../utils  # Утилиты
-import ../dsl  # Метапрограммирование для модулей 
+import ../dsl  # Метапрограммирование для модулей
 import ../log  # Логгирование
 # Импортируем переменные с кол-вом обработанных сообщений и команд
 from ../message import msgCount, cmdCount

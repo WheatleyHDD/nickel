@@ -2,15 +2,10 @@ import strutils
 switch("path", "..")
 switch("define", "ssl")
 
-hint("User", false)
 hint("XDeclaredButNotUsed", false)
-hint("Pattern", false)
-warning("ProveField", false)
-warning("ProveInit", false)
-warning("GcUnsafe", false)
+
 warning("GcUnsafe2", false)
 warning("UnusedImport", false)
-
 
 # Кросс-компиляция под Windows с помощью mingw
 when defined(crosswin):

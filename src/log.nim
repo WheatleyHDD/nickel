@@ -1,8 +1,6 @@
-include base_imports
-import macros
-import times
-import terminal
+import std / [macros, terminal, strutils, strformat, times]
 
+import types, utils
 
 type
   LogLevel* = enum
@@ -13,28 +11,21 @@ type
     lvlError = "ERROR"
     lvlFatal = "FATAL"
 
-# Logging level, can be changed
+# Default logging level, can be changed
 var logLevel* = lvlInfo
 
-proc getColor(lvl: LogLevel): ForegroundColor = 
-  ## Gets color for the specified logging level
-  case lvl
-  of lvlDebug: fgWhite
-  of lvlInfo: fgGreen
-  of lvlNotice: fgCyan
-  of lvlWarn: fgYellow
-  of lvlError, lvlFatal: fgRed
+const levelToColor: array[LogLevel, ForegroundColor] = [
+  fgWhite, fgGreen, fgCyan, fgYellow, fgRed, fgRed
+]
 
-
-proc log*(lvl: LogLevel, line: string) = 
+proc log*(lvl: LogLevel, line: string) =
   ## Logs message with specified log level to the stdout
-  setForegroundColor(stdout, getColor(lvl))
-  stdout.write("$1 | $2 | $3\n" % [$now(), $lvl, line])
+  setForegroundColor(stdout, levelToColor[lvl])
+  echo fmt"{now()} | {$lvl:^6} | {line}"
   resetAttributes()
 
-
-macro getFormatted(data: varargs[untyped]): untyped = 
-  ## Returns a strutils.format call for code like 
+macro getFormatted(data: varargs[untyped]): untyped =
+  ## Returns a strutils.format call for code like
   ## getFormatted("Test", a = 1, b = "hello")
   result = newTree(nnkCall)
 
@@ -63,8 +54,8 @@ macro getFormatted(data: varargs[untyped]): untyped =
   for node in tmp:
     result.add(node)
 
-template genTemplate(name: untyped, lvl: untyped): untyped = 
-  template name*(data: varargs[untyped]): untyped = 
+template genTemplate(name: untyped, lvl: untyped): untyped =
+  template name*(data: varargs[untyped]): untyped =
     log(lvl, getFormatted(data))
 
 # Generate templates for all log levels
@@ -76,19 +67,19 @@ genTemplate(logError, lvlError)
 genTemplate(logFatal, lvlFatal)
 
 
-template fatalError*(data: varargs[untyped]) = 
+template fatalError*(data: varargs[untyped]) =
   ## Логгирует ошибку data с уровнем error и выключает бота
   logFatal(data)
   quit()
 
 
-proc log*(msg: Message, command = false) = 
+proc log*(msg: Message, command = false) =
   ## Логгирует объект сообщения в консоль
   let frm = $msg.pid
   # Если нужно логгировать команду
   if command:
     logInfo(
-      "New command", sender_id = frm, 
+      "New command", sender_id = frm,
       cmd = quotes(msg.cmd.name), args = toStr(msg.cmd.args)
     )
   else:

@@ -1,14 +1,8 @@
 version       = "1.2.0"
-author        = "Daniil Yarancev"
-description   = "Nickel - command-based bot for largest CIS social network - VKontakte"
+author        = "Danil Yarantsev"
+description   = "Nickel - command-based bot for vk.com social network"
 license       = "MIT"
 srcDir        = "src"
 bin           = @["nickel"]
 
-requires "nim >= 0.18.1", "mathexpr", "parsetoml"
-when defined(nimdistros):
-  import distros
-  if detectOs(Ubuntu):
-    foreignDep "libssl-dev"
-  else:
-    foreignDep "openssl"
+requires "nim >= 1.0.0", "mathexpr", "parsetoml"

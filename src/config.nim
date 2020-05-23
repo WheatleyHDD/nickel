@@ -2,7 +2,7 @@ include base_imports
 # Сортировка префиксов
 import algorithm
 import sequtils
-# Парсинг конфигурации 
+# Парсинг конфигурации
 import parsetoml
 # Стандартные конфигурации
 import default_config
@@ -28,7 +28,6 @@ proc parseBotConfig*(): BotConfig =
     самые длинные префиксы были в начале. Это нужно для того, чтобы при
     наличиии нескольких префиксов разной длины, которые начинаются одинаково,
     выбирался самый подходящий]#
-    
     var prefixes: seq[string]
     for elem in data["Bot"]["prefixes"].getElems():
       prefixes.add(elem.getStr())
@@ -79,12 +78,12 @@ proc getModuleConfig*(global: TomlValueRef, m: Module): TomlTableRef =
   ## Возвращает кортеж (конфиг, ошибка).
   try: result = global[m.filename].getTable()
   # Записываем ошибку (если она произошла)
-  except Exception as exc: 
+  except Exception as exc:
     fatalException "Can't read modules config file"
 
 proc log*(c: BotConfig) =
   ## Логгирует текущие настройки бота
-  logNotice("Loaded bot configuration", 
+  logNotice("Loaded bot configuration",
     logMessages = c.logMessages,
     logCommands = c.logCommands,
     errorMsg = quotes(c.errorMessage), # Сообщение в кавычках

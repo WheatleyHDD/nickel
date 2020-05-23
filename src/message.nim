@@ -8,13 +8,13 @@ import types  # Общие типы бота
 import utils  # Утилиты
 import handlers  # Парсинг команд
 
-var 
+var
   msgCount* = 0
   cmdCount* = 0
 
 proc processMessage*(bot: VkBot, msg: Message) {.async.} =
   ## Обрабатывает сообщение: логгирует, передаёт события плагинам
-  let 
+  let
     cmdText = msg.cmd.name
     rusConverted = toRus(cmdText)
     engConverted = toEng(cmdText)
@@ -44,7 +44,7 @@ proc processMessage*(bot: VkBot, msg: Message) {.async.} =
     # Если это не команда, и нужно логгировать сообщения
     if bot.config.logMessages: msg.log()
 
-proc checkMessage*(bot: VkBot, msg: Message) {.async.} = 
+proc checkMessage*(bot: VkBot, msg: Message) {.async.} =
   ## Выполняет обработку сообщения и проверяет ошибки
   let processResult = bot.processMessage(msg)
   yield processResult
