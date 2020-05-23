@@ -34,6 +34,7 @@ proc parseBotConfig*(): BotConfig =
       login: user["login"].getStr(),
       password: user["password"].getStr(),
       convertText: bot["try_convert"].getBool(),
+      forwardConf: bot["forward_conf"].getBool(),
       reportErrors: errors["report"].getBool(),
       fullReport: errors["complete_log"].getBool(),
       errorMessage: messages["error"].getStr(),
