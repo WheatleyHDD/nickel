@@ -167,16 +167,18 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
     jsonData = parseJson(resp)
   
   let response = jsonData{"response"}
+  let execErr = (methodName == "execute" and "execute_errors" in jsonData)
   # Если есть секция response - нам нужно вернуть ответ из неё
-  if not response.isNil():
+  if not response.isNil() and not execErr:
     return response
   # Иначе - проверить на ошибки, и просто вернуть ответ, если всё хорошо
   else:
-    let error = jsonData{
-      if methodName != "execute": "error" else: "execute_errors"
-    }
+    let errors = 
+      if execErr: jsonData{"execute_errors"}.getElems(@[])
+    else:
+      @[jsonData{"error"}]
     # Если есть какая-то ошибка
-    if not error.isNil():
+    for error in errors:
       case error["error_code"].getInt():
       # Слишком много одинаковых сообщений
       of 9:
@@ -194,10 +196,11 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
         #return await callMethod(api, methodName, params, needAuth)
       else:
         logError("VK API call error", apiMethod = methodName,
-          error = error["error_msg"].getStr(), json = jsonData
+          error = error["error_msg"].getStr(), json = error
         )
     # Если нет ошибки и поля response, просто возвращаем ответ
-    else: return jsonData
+    if errors.len == 0:
+      return jsonData
 
 proc executeCaller*(api: VkApi) {.async.} =
   ## Бесконечный цикл, проверяет последовательность запросов requests 
