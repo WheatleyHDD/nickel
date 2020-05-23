@@ -13,6 +13,8 @@ type
 
 # Default logging level, can be changed
 var logLevel* = lvlInfo
+# Do we want to use colors for the log?
+var useColors* = false
 
 const levelToColor: array[LogLevel, ForegroundColor] = [
   fgWhite, fgGreen, fgCyan, fgYellow, fgRed, fgRed
@@ -20,9 +22,11 @@ const levelToColor: array[LogLevel, ForegroundColor] = [
 
 proc log*(lvl: LogLevel, line: string) =
   ## Logs message with specified log level to the stdout
-  setForegroundColor(stdout, levelToColor[lvl])
+  if useColors:
+    setForegroundColor(stdout, levelToColor[lvl])
   echo fmt"{now()} | {$lvl:^6} | {line}"
-  resetAttributes()
+  if useColors:
+    resetAttributes()
 
 macro getFormatted(data: varargs[untyped]): untyped =
   ## Returns a strutils.format call for code like

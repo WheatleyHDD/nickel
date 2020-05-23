@@ -17,6 +17,8 @@
   try_convert = true
   # Должен ли бот пересылать сообщение, на которое он отвечает, в беседе
   forward_conf = true
+  # Использовать ли цвета при выводе логов в терминале
+  use_colors = true
 
 [CallbackApi]
   # Использовать ли Callback API?

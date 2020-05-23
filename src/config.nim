@@ -45,6 +45,7 @@ proc parseBotConfig*(): BotConfig =
       useCallback: callback["enabled"].getBool(),
       confirmationCode: callback["code"].getStr()
     )
+    useColors = bot["use_colors"].getBool()
     # Если в конфиге нет токена, или логин или пароль пустые
     if result.token == "" and (result.login == "" or result.password == ""):
       fatalError "No authentication data found in configuration"
