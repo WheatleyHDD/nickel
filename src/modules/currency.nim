@@ -4,11 +4,13 @@ import httpclient, times
 const
   Url = "https://api.exchangeratesapi.io/latest?base=RUB"
   # При желании сюда можно добавить другие валюты, доступные на fixer.io
-  Currencies = {
-    "USD": "Доллар: ",
-    "EUR": "Евро: ",
-    "GBP": "Английский фунт: "
-  }.toTable
+
+# https://github.com/nim-lang/Nim/issues/14410
+let Currencies = {
+  "USD": "Доллар: ",
+  "EUR": "Евро: ",
+  "GBP": "Английский фунт: "
+}.toTable
 
 var
   data = ""
