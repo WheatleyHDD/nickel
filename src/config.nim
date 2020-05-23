@@ -1,27 +1,15 @@
 include base_imports
 # Сортировка префиксов
 import algorithm
-import sequtils
 # Парсинг конфигурации
 import parsetoml
 # Стандартные конфигурации
-import default_config
 
 proc parseBotConfig*(): BotConfig =
   ## Парсит конфигурационные файлы бота или создаёт их при первом запуске
+  if not existsDir("config"):
+    fatalError "Move 'config_default' to 'config' and edit config files!"
   const botCfg = "config" / "bot.toml"
-  const moduleCfg = "config" / "modules.toml"
-  try:
-    createDir("config")
-    let needCreate = not (existsFile(botCfg) or existsFile(moduleCfg))
-    if not existsFile(botCfg):
-      writeFile(botCfg, DefaultBotConfig)
-    if not existsFile(moduleCfg):
-      writeFile(moduleCfg, DefaultModulesConfig)
-    if needCreate:
-      fatalError "Created default configuration files, check `config` directory"
-  except Exception as exc:
-    fatalError "Can't create config files", error = exc.msg
   try:
     let data = parsetoml.parseFile(botCfg)
     #[Сортируем по длине префикса и переворачиваем последовательность, чтобы
@@ -69,7 +57,8 @@ proc parseBotConfig*(): BotConfig =
 
 proc parseModulesConfig*: TomlValueRef =
   ## Пытается спарсить общий файл конфигурации модулей, выходит при ошибке
-  try: result = parsetoml.parseFile("config" / "modules.toml")
+  try: 
+    result = parsetoml.parseFile("config" / "modules.toml")
   except Exception as exc:
     fatalException "Can't read modules config file"
 
