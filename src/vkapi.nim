@@ -109,21 +109,21 @@ proc newApi*(c: BotConfig): VkApi =
 proc toExecute(methodName: string, params: StringTableRef): string =
   ## Конвертирует вызов метода с параметрами в формат, необходимый для execute
   # Если нет параметров, нам не нужно их обрабатывать
-  if params.len == 0:
-    return "API." & methodName & "()"
-  let
-    # Получаем последовательность из параметров вызовы
-    pairsSeq = toSeq(params.pairs)
-    # Составляем последовательность аргументов к вызову API
-    keyValSeq = pairsSeq.mapIt(
-      "\"$1\":\"$2\"" % [
-        it.key,
-        # Заменяем \n на <br> и " на \"
-      it.value.multiReplace(("\n", "<br>"), ("\"", "\\\""))
-    ]
-    )
-  # Возвращаем полный вызов к API с именем метода и параметрами
-  result = "API." & methodName & "({" & keyValSeq.join(", ") & "})"
+  result = if params.len == 0:
+    "API." & methodName & "()"
+  else:
+    let
+      # Получаем последовательность из параметров вызовы
+      pairsSeq = toSeq(params.pairs)
+      # Составляем последовательность аргументов к вызову API
+      keyValSeq = pairsSeq.mapIt(
+        "\"$1\":\"$2\"" % [
+          it.key,
+          # Заменяем \n на <br> и " на \"
+          it.value.multiReplace(("\n", "<br>"), ("\"", "\\\""))
+      ])
+    # Возвращаем полный вызов к API с именем метода и параметрами
+    "API." & methodName & "({" & keyValSeq.join(", ") & "})"
 
 # Создаём очередь запросов (по умолчанию делаем её из 32 элементов)
 var requests = initDeque[MethodCall](32)
@@ -165,7 +165,7 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
       params["message"] = antiFlood() & "\n" & params["message"]
     # Парсим ответ от сервера
     jsonData = parseJson(resp)
-
+  
   let response = jsonData{"response"}
   # Если есть секция response - нам нужно вернуть ответ из неё
   if not response.isNil():

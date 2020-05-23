@@ -120,3 +120,27 @@ module "⚡ Случайные числа":
         "Весьма сомнительно.", "Не могу дать точный ответ."
       ]
     answer &"🎱 {sample(Answers)}"
+  
+  command ["кто"]:
+    usage = "кто <высказывание> - показывает, кто в чате соответствует высказыванию"
+    const
+      Answers = [
+        "Я определил, что ", "Мне кажется, что ", "Оказывается, ",
+        "Однако ", "Неожиданно, но ", "Никто этого не ожидал, но "
+      ]
+    if args.len < 1:
+      answer usage
+      return
+    if msg.kind != msgConf:
+      answer "Данную команду можно использовать только в беседе!"
+      return
+    let members = await api@messages.getChat(
+      chat_id = (msg.pid - 2_000_000_000), fields = "first_name, last_name"
+    )
+    var toChoose: seq[string]
+    for user in members["users"].elems:
+      let id = $user["id"].getInt()
+      let name = $user["first_name"].getStr() & " " & $user["last_name"].getStr()
+      let urlname = fmt"""[id{id}|{name}]"""
+      toChoose.add urlname
+    answer sample(Answers) & sample(toChoose) & " - " & text
