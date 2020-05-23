@@ -80,7 +80,7 @@ proc log*(msg: Message, command = false) =
   if command:
     logInfo(
       "New command", sender_id = frm,
-      cmd = quotes(msg.cmd.name), args = toStr(msg.cmd.args)
+      cmd = quotes(msg.cmd.name), args = $(msg.cmd.args)
     )
   else:
     logDebug("New message", sender_id = frm, text = msg.body)

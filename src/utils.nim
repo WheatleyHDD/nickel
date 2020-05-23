@@ -1,10 +1,7 @@
 # Файл с различными помощниками
 
-# Стандартная библиотека
 import macros, strtabs, times, strutils, random, os
-import sequtils, unicode, cgi, strformat
-# Свои пакеты
-import types
+import unicode, cgi, strformat
 
 const
   # Таблица русских и английских символов (для конвертирования раскладки)
@@ -76,12 +73,10 @@ macro importPlugins*(): untyped =
     if kind != pcFile: continue
     let filename = path.extractFilename()
     if filename in IgnoreFilenames: continue
-    # Имя модуля для импорта
-    let toImport = filename.split(".")
-    # Если расширение файла не .nim или в названии есть "skip" - пропускаем
-    if toImport.len != 2 or toImport[1] != "nim" or "skip" in toImport[0]: continue
+    let toImport = filename.splitFile()
+    if toImport.ext != ".nim" or "skip" in toImport.name: continue
     # Добавляем импорт этого модуля
-    result.add parseExpr(&"import {folder}/{toImport[0]}")
+    result.add parseExpr(&"import {folder}/{toImport.name}")
   # Импортируем help в самом конце, чтобы все остальные модули записали
   # свои команды в commands
   result.add parseExpr(&"import {folder}/help")
@@ -101,24 +96,10 @@ proc getMoscowTime*(): string =
 
 proc antiFlood*(): string =
   ## Служит для обхода антифлуда ВК (генерирует пять случайных букв)
-  const Alphabet = "ABCDEFGHIJKLMNOPQRSTUWXYZ"
-  result = ""
-  for x in 0..4:
-    result.add sample(Alphabet)
+  for x in 0 .. 4:
+    result.add sample({'A' .. 'Z'})
 
 template quotes*(data: string): string = "\"" & data & "\""
-
-proc toStr*[T](x: openArray[T], separator = ", "): string =
-  ## Выводит массив/последовательность в консоль с сохранением символов Unicode
-  result = "["
-  var firstElement = true
-  for value in items(x):
-    if firstElement:
-      firstElement = false
-    else:
-      result.add(separator)
-    result.add(quotes(value))
-  result.add("]")
 
 template fatalException*(data: untyped) {.dirty.} = 
   fatalError data, error = exc.msg

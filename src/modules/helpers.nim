@@ -27,13 +27,13 @@ module "📚 Хелперы":
     const
       gitRev =
         # Если в данной папке есть репозиторий и есть git клиент
-        if dirExists(".git") and gorgeEx("git status")[1] == 0:
+        if dirExists(".git") and gorgeEx("git status").exitCode == 0:
           staticExec("git rev-parse HEAD")
-        else: "неизвестно"
+        else: "неизвестна"
     
-    answer fmt"""Nickel - бот для ВКонтакте на Nim
-    Автор - vk.com/yardanico
-    Git-ревизия - {gitRev}
+    answer fmt"""Nickel - бот для ВКонтакте, написанный на Nim 👑
+    Автор - vk.com/sudouser1
+    Git ревизия - {gitRev}
     Скомпилирован {CompileDate} в {CompileTime}
     Обработано команд: {cmdCount}
     Принято сообщений: {msgCount}

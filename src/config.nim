@@ -1,9 +1,6 @@
 include base_imports
-# Сортировка префиксов
 import algorithm
-# Парсинг конфигурации
 import parsetoml
-# Стандартные конфигурации
 
 proc parseBotConfig*(): BotConfig =
   ## Парсит конфигурационные файлы бота или создаёт их при первом запуске
@@ -79,5 +76,5 @@ proc log*(c: BotConfig) =
     reportErrors = c.reportErrors,
     logErrors = c.logErrors,
     fullErrorLog = c.fullReport,
-    botPrefixes = toStr(c.prefixes)
+    botPrefixes = $c.prefixes
   )
