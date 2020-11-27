@@ -10,7 +10,7 @@ module "📊 Калькулятор":
       answer usage
       return
     let data = try:
-      e.eval(text)
+      discard e.eval(text)
     except:
       answer "Я не смог это сосчитать :("
       return
