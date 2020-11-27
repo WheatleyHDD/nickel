@@ -83,7 +83,7 @@ proc login*(login, password: string): string =
     "username": login,
     "password": password,
     "scope": AuthScope,
-    "v": "5.60"
+    "v": "5.124"
   }.toApi
 
   let
@@ -179,25 +179,26 @@ proc callMethod*(api: VkApi, methodName: string, params: StringTableRef = nil,
       @[jsonData{"error"}]
     # Если есть какая-то ошибка
     for error in errors:
-      case error["error_code"].getInt():
-      # Слишком много одинаковых сообщений
-      of 9:
-        # await api.apiLimiter()
-        return await callMethod(api, methodName, params, auth, flood = true)
-      # Капча
-      of 14:
-        # TODO: Обработка капчи
-        let
-          sid = error["captcha_sid"].getStr()
-          img = error["captcha_img"].getStr()
-        logError "Captcha", sid = sid, image_link = img
-        params["captcha_sid"] = sid
-      #params["captcha_key"] = key
-        #return await callMethod(api, methodName, params, needAuth)
-      else:
-        logError("VK API call error", apiMethod = methodName,
-          error = error["error_msg"].getStr(), json = error
-        )
+      if error{"error_code"} != nil:
+        case error["error_code"].getInt():
+        # Слишком много одинаковых сообщений
+        of 9:
+          # await api.apiLimiter()
+          return await callMethod(api, methodName, params, auth, flood = true)
+        # Капча
+        of 14:
+          # TODO: Обработка капчи
+          let
+            sid = error["captcha_sid"].getStr()
+            img = error["captcha_img"].getStr()
+          logError "Captcha", sid = sid, image_link = img
+          params["captcha_sid"] = sid
+        #params["captcha_key"] = key
+          #return await callMethod(api, methodName, params, needAuth)
+        else:
+          logError("VK API call error", apiMethod = methodName,
+            error = error["error_msg"].getStr(), json = error
+          )
     # Если нет ошибки и поля response, просто возвращаем ответ
     if errors.len == 0:
       return jsonData
